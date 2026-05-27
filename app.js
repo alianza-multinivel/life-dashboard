@@ -93,9 +93,37 @@ const defaultData = () => ({
 let state = defaultData();
 
 /* ─── AUTHENTICATION ──────────────────────────────────────────── */
-function getCurrentUser() { return localStorage.getItem('current_user'); }
-function setCurrentUser(username) { localStorage.setItem('current_user', username); }
-function clearCurrentUser() { localStorage.removeItem('current_user'); }
+// Test if localStorage is actually persistent (returns true if works)
+function isStorageAvailable() {
+  try {
+    const k = '__test_ls_' + Date.now();
+    localStorage.setItem(k, '1');
+    const ok = localStorage.getItem(k) === '1';
+    localStorage.removeItem(k);
+    return ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Detect in-app browsers (WhatsApp, Instagram, Facebook, etc.)
+function isInAppBrowser() {
+  const ua = (navigator.userAgent || '').toLowerCase();
+  return /fban|fbav|fb_iab|instagram|whatsapp|line|micromessenger|tiktok|wv\)/i.test(ua) ||
+         (/iphone|ipod|ipad/i.test(ua) && !/safari/i.test(ua) && !/crios|fxios/i.test(ua));
+}
+
+function getCurrentUser() {
+  try { return localStorage.getItem('current_user'); }
+  catch(e) { return null; }
+}
+function setCurrentUser(username) {
+  try { localStorage.setItem('current_user', username); return true; }
+  catch(e) { console.error('setCurrentUser failed', e); return false; }
+}
+function clearCurrentUser() {
+  try { localStorage.removeItem('current_user'); } catch(e) {}
+}
 
 function loadState() {
   try {
@@ -110,32 +138,89 @@ function loadState() {
 function saveState() {
   const currentUser = getCurrentUser();
   if (!currentUser) return; // No guardar si no hay usuario
-  localStorage.setItem('user_' + currentUser, JSON.stringify(state));
+  try {
+    localStorage.setItem('user_' + currentUser, JSON.stringify(state));
+  } catch (e) {
+    console.error('saveState failed:', e);
+    // Show warning only once per session
+    if (!window._saveErrorShown) {
+      window._saveErrorShown = true;
+      alert('⚠️ NO SE PUEDEN GUARDAR TUS DATOS\n\nPosibles causas:\n• Abriste el link desde una app (WhatsApp, Instagram) — los datos NO se guardan ahí\n• Estás en modo Incógnito / Privado\n• El espacio de almacenamiento está lleno\n\n✅ SOLUCIÓN: Copia el link y ábrelo en Safari o Chrome directamente (no desde una app).');
+    }
+  }
+}
+
+function showStorageWarning(msg) {
+  alert(msg);
 }
 
 function authLogin(username) {
   if (!username) username = el('loginUsername').value.trim();
   if (!username) { alert('⚠️ Ingresa tu nombre de usuario'); return; }
-  const userData = localStorage.getItem('user_' + username);
+  if (!isStorageAvailable()) {
+    showStorageWarning('⚠️ Tu navegador NO permite guardar datos.\n\nProbablemente abriste el link desde WhatsApp o estás en modo Incógnito.\n\n✅ Copia el link y ábrelo en Safari o Chrome.');
+    return;
+  }
+  let userData = null;
+  try { userData = localStorage.getItem('user_' + username); } catch(e) {}
   if (!userData) { alert('⚠️ Usuario no encontrado. Crea uno nuevo.'); return; }
-  setCurrentUser(username);
-  location.reload(); // Recargar para que init() detecte al usuario y muestre el dashboard
+  if (!setCurrentUser(username)) {
+    showStorageWarning('⚠️ No se pudo iniciar sesión — tu navegador bloquea el almacenamiento. Ábrelo en Safari o Chrome.');
+    return;
+  }
+  // Use init() instead of reload — more resilient (avoids losing state on in-app browsers)
+  document.body.classList.remove('auth-mode');
+  loadState();
+  if (typeof migrateTaskAreas === 'function') migrateTaskAreas();
+  if (typeof applyDarkMode === 'function') applyDarkMode();
+  if (typeof applyChartDefaults === 'function') applyChartDefaults();
+  if (typeof refreshSidebarAvatar === 'function') refreshSidebarAvatar();
+  navigate('overview');
 }
 
 function authRegister(username, displayName) {
   if (!username) username = el('regUsername').value.trim();
   if (!displayName) displayName = el('regDisplayName').value.trim();
   if (!username || !displayName) { alert('⚠️ Completa todos los campos'); return; }
-  if (localStorage.getItem('user_' + username)) { alert('⚠️ Este nombre de usuario ya existe'); return; }
-  setCurrentUser(username);
-  state = { ...defaultData(), displayName: displayName };
-  saveState();
-  location.reload(); // Recargar para que init() cargue al nuevo usuario
+  // Hard check storage before doing anything
+  if (!isStorageAvailable()) {
+    showStorageWarning('⚠️ Tu navegador NO permite guardar datos.\n\nProbablemente abriste el link desde WhatsApp/Instagram o estás en modo Incógnito.\n\n✅ Copia el link y ábrelo en Safari o Chrome.\n\nDe lo contrario, todo lo que guardes se perderá al cerrar.');
+    return;
+  }
+  try {
+    if (localStorage.getItem('user_' + username)) { alert('⚠️ Este nombre de usuario ya existe'); return; }
+  } catch(e) {
+    showStorageWarning('⚠️ Tu navegador NO permite guardar datos. Abre el link en Safari o Chrome.');
+    return;
+  }
+  // Persist BEFORE doing anything else
+  const newState = { ...defaultData(), displayName: displayName };
+  try {
+    localStorage.setItem('user_' + username, JSON.stringify(newState));
+    localStorage.setItem('current_user', username);
+  } catch (e) {
+    showStorageWarning('⚠️ No se pudieron guardar los datos. Tu navegador bloquea el almacenamiento.\n\nAbre el link en Safari o Chrome (no desde WhatsApp).');
+    return;
+  }
+  // Verify the write actually persisted
+  if (localStorage.getItem('user_' + username) == null) {
+    showStorageWarning('⚠️ El almacenamiento se borró inmediatamente — esto pasa en navegadores integrados de apps.\n\n✅ Abre el link en Safari o Chrome.');
+    return;
+  }
+  // Success — set up the app without reload
+  state = newState;
+  document.body.classList.remove('auth-mode');
+  if (typeof migrateTaskAreas === 'function') migrateTaskAreas();
+  if (typeof applyDarkMode === 'function') applyDarkMode();
+  if (typeof applyChartDefaults === 'function') applyChartDefaults();
+  if (typeof refreshSidebarAvatar === 'function') refreshSidebarAvatar();
+  navigate('overview');
 }
 
 function authLogout() {
   if (confirm('¿Desconectarse del dashboard?')) {
     clearCurrentUser();
+    // Use reload only here — it's safe because we want a clean slate
     location.reload();
   }
 }
@@ -150,6 +235,38 @@ function showRegisterForm() {
   el('loginForm').style.display = 'none';
   el('registerForm').style.display = '';
   el('regUsername').focus();
+}
+
+// Called from the in-app warning banner
+function copyAppLink() {
+  const link = location.href.split('#')[0];  // clean URL
+  const showHint = () => {
+    const hint = el('copyHint');
+    if (hint) hint.style.display = 'block';
+    setTimeout(() => { if (hint) hint.style.display = 'none'; }, 5000);
+  };
+  // Try modern clipboard API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(showHint).catch(() => fallbackCopy(link, showHint));
+  } else {
+    fallbackCopy(link, showHint);
+  }
+}
+
+function fallbackCopy(text, onOk) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    onOk && onOk();
+  } catch(e) {
+    prompt('Copia este link manualmente y pégalo en Safari o Chrome:', text);
+  }
 }
 
 function deepMerge(target, source) {
@@ -3129,6 +3246,12 @@ function applyChartDefaults() {
 }
 
 function init(){
+  // Detect in-app browser and show warning on login screen
+  if (isInAppBrowser() || !isStorageAvailable()) {
+    const warn = el('inAppWarning');
+    if (warn) warn.style.display = 'flex';
+  }
+
   // CHECK AUTHENTICATION — si no hay usuario, mostrar login y ocultar dashboard
   if (!getCurrentUser()) {
     document.body.classList.add('auth-mode');

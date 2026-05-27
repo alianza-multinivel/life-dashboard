@@ -1691,6 +1691,27 @@ body.auth-mode .main{padding:0;overflow:visible}
 body.auth-mode .app{display:block;min-height:100vh}
 
 .auth-container{width:100%;max-width:400px;animation:slideUp .5s ease}
+.auth-warning{
+  background:#FFFFFF;border-radius:14px;padding:18px;margin-bottom:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);
+  border-left:5px solid #E11D48;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.auth-warning-icon{font-size:24px;flex-shrink:0;line-height:1}
+.auth-warning-body{flex:1;min-width:0}
+.auth-warning-body strong{display:block;font-size:14px;color:#0F0F0F;margin-bottom:4px;font-weight:800}
+.auth-warning-body p{font-size:13px;color:#525252;line-height:1.5;margin-bottom:10px}
+.auth-warning-btn{
+  background:linear-gradient(135deg,#EA580C,#FCD34D);color:#fff;
+  border:none;padding:10px 14px;border-radius:9px;
+  font-weight:700;font-size:13px;cursor:pointer;width:100%;font-family:inherit;
+  box-shadow:0 4px 12px rgba(234,88,12,.3);
+}
+.auth-warning-btn:active{transform:scale(.97)}
+.auth-warning-hint{
+  font-size:12px;color:#059669;font-weight:700;margin-top:8px;
+  background:#D1FAE5;padding:8px 10px;border-radius:7px;
+}
 .auth-card{
   background:#FFFFFF;padding:40px 36px;border-radius:18px;
   box-shadow:0 25px 60px rgba(0,0,0,.25);
@@ -1957,6 +1978,18 @@ body.auth-mode .app{display:block;min-height:100vh}
   <!-- LOGIN PAGE -->
   <section class="auth-page" id="page-login">
     <div class="auth-container">
+
+      <!-- IN-APP BROWSER WARNING (mostrado por JS si aplica) -->
+      <div id="inAppWarning" class="auth-warning" style="display:none">
+        <div class="auth-warning-icon">⚠️</div>
+        <div class="auth-warning-body">
+          <strong>Abre este link en Safari o Chrome</strong>
+          <p>Estás viendo esto en el navegador interno de una app (WhatsApp, Instagram, etc.). <b>Tus datos NO se guardarán</b> aquí.</p>
+          <button class="auth-warning-btn" onclick="copyAppLink()">📋 Copiar link para abrir en Safari/Chrome</button>
+          <div class="auth-warning-hint" id="copyHint" style="display:none">✓ Link copiado. Ahora ábrelo en Safari/Chrome (pega en la barra de direcciones).</div>
+        </div>
+      </div>
+
       <!-- LOGIN FORM -->
       <div class="auth-card" id="loginForm">
         <div class="auth-brand">
