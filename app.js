@@ -4994,24 +4994,140 @@ function getHawkinsLevel(level) {
   return HAWKINS_SCALE.find(x => x.level === level) || HAWKINS_SCALE[HAWKINS_SCALE.length-1];
 }
 
+/* ─── CONSCIOUSNESS FILTER (período seleccionado) ────────── */
+function getConsciousnessFilter() {
+  if (!state.consciousness) state.consciousness = { logs: [] };
+  if (!state.consciousness.filterMode) state.consciousness.filterMode = 'all';
+  if (!state.consciousness.filterDate) state.consciousness.filterDate = today();
+  return { mode: state.consciousness.filterMode, date: state.consciousness.filterDate };
+}
+
+function getConsciousnessWeekRange(dateStr) {
+  const d = new Date(dateStr + 'T00:00');
+  const monday = new Date(d);
+  const dow = monday.getDay();
+  monday.setDate(monday.getDate() - (dow === 0 ? 6 : dow - 1));
+  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+  return { start: monday.toISOString().slice(0,10), end: sunday.toISOString().slice(0,10), monday, sunday };
+}
+
+function getFilteredConsciousnessLogs() {
+  const all = (state.consciousness && state.consciousness.logs) || [];
+  const { mode, date } = getConsciousnessFilter();
+  if (mode === 'all') return all;
+  if (mode === 'day') return all.filter(l => l.date === date);
+  if (mode === 'week') {
+    const { start, end } = getConsciousnessWeekRange(date);
+    return all.filter(l => l.date >= start && l.date <= end);
+  }
+  if (mode === 'month') {
+    const key = date.slice(0,7);
+    return all.filter(l => l.date && l.date.startsWith(key));
+  }
+  return all;
+}
+
+function getConsciousnessFilterLabel() {
+  const { mode, date } = getConsciousnessFilter();
+  if (mode === 'all') return 'Todo el historial';
+  if (mode === 'day') {
+    return new Date(date+'T00:00').toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  }
+  if (mode === 'week') {
+    const { monday, sunday } = getConsciousnessWeekRange(date);
+    return `${monday.toLocaleDateString('es-ES',{day:'numeric',month:'short'})} → ${sunday.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}`;
+  }
+  if (mode === 'month') {
+    return new Date(date+'T00:00').toLocaleDateString('es-ES', { month:'long', year:'numeric' });
+  }
+  return '';
+}
+
+function setConsciousnessFilterMode(mode) {
+  state.consciousness = state.consciousness || { logs:[] };
+  state.consciousness.filterMode = mode;
+  if (!state.consciousness.filterDate) state.consciousness.filterDate = today();
+  saveState();
+  renderConsciousness();
+}
+
+function setConsciousnessFilterDate(value) {
+  if (!value) return;
+  const { mode } = getConsciousnessFilter();
+  let normalized = value;
+  if (mode === 'month' && value.length === 7) normalized = value + '-01';
+  state.consciousness.filterDate = normalized;
+  saveState();
+  renderConsciousness();
+}
+
+function shiftConsciousnessFilter(delta) {
+  const { mode, date } = getConsciousnessFilter();
+  if (mode === 'all') return;
+  const d = new Date(date + 'T00:00');
+  if (mode === 'day') d.setDate(d.getDate() + delta);
+  else if (mode === 'week') d.setDate(d.getDate() + delta * 7);
+  else if (mode === 'month') d.setMonth(d.getMonth() + delta);
+  state.consciousness.filterDate = d.toISOString().slice(0,10);
+  saveState();
+  renderConsciousness();
+}
+
+function jumpConsciousnessFilterToToday() {
+  state.consciousness.filterDate = today();
+  saveState();
+  renderConsciousness();
+}
+
 function renderConsciousness() {
   const mount = el('consciousnessMount');
   if (!mount) return;
   if (!state.consciousness) state.consciousness = { logs: [] };
-  const logs = state.consciousness.logs || [];
+  const allLogs = state.consciousness.logs || [];
+  const filter = getConsciousnessFilter();
+  const logs = getFilteredConsciousnessLogs();
   const hasLogs = logs.length > 0;
+  const filterLabel = getConsciousnessFilterLabel();
+
+  // Date input value depending on mode
+  const dateInputType = filter.mode === 'month' ? 'month' : 'date';
+  const dateInputValue = filter.mode === 'month' ? filter.date.slice(0,7) : filter.date;
 
   let html = `
-    <div class="grid-2 mt-24">
+    <div class="cons-filter-bar mt-24">
+      <div class="cons-filter-tabs">
+        <button class="cons-filter-tab ${filter.mode==='all'?'active':''}" onclick="setConsciousnessFilterMode('all')">📚 Todo</button>
+        <button class="cons-filter-tab ${filter.mode==='day'?'active':''}" onclick="setConsciousnessFilterMode('day')">📅 Día</button>
+        <button class="cons-filter-tab ${filter.mode==='week'?'active':''}" onclick="setConsciousnessFilterMode('week')">📆 Semana</button>
+        <button class="cons-filter-tab ${filter.mode==='month'?'active':''}" onclick="setConsciousnessFilterMode('month')">🗓 Mes</button>
+      </div>
+      ${filter.mode !== 'all' ? `
+        <div class="cons-filter-nav">
+          <button class="cons-filter-arrow" onclick="shiftConsciousnessFilter(-1)" title="Anterior">‹</button>
+          <label class="cons-filter-date-wrap">
+            <span class="cons-filter-label">${filterLabel}</span>
+            <input type="${dateInputType}" class="cons-filter-date-input" value="${dateInputValue}" onchange="setConsciousnessFilterDate(this.value)">
+          </label>
+          <button class="cons-filter-arrow" onclick="shiftConsciousnessFilter(1)" title="Siguiente">›</button>
+          <button class="cons-filter-today" onclick="jumpConsciousnessFilterToToday()" title="Saltar a hoy">Hoy</button>
+        </div>
+      ` : ''}
+      <div class="cons-filter-count">
+        <strong>${logs.length}</strong> ${logs.length===1?'registro':'registros'}
+        ${filter.mode !== 'all' ? ` · ${formatDuration(logs.reduce((s,l)=>s+(Number(l.duration)||60),0))} totales` : ''}
+      </div>
+    </div>
+
+    <div class="grid-2 mt-16">
       <div class="card">
-        <div class="card-head"><div><h3 class="card-title">📈 Fluctuación de tu vibración</h3><p class="card-sub">Cómo se mueve tu nivel de conciencia día a día</p></div></div>
+        <div class="card-head"><div><h3 class="card-title">📈 Fluctuación de tu vibración</h3><p class="card-sub">${filter.mode==='all'?'Cómo se mueve tu nivel de conciencia':'Movimiento en este período'}</p></div></div>
         <div class="chart-wrap" style="height:260px"><canvas id="chartConsciousnessLine"></canvas></div>
-        ${!hasLogs ? '<div class="text-xs text-muted" style="text-align:center;padding:14px">Registra emociones para ver la curva</div>' : ''}
+        ${!hasLogs ? '<div class="text-xs text-muted" style="text-align:center;padding:14px">'+(filter.mode==='all'?'Registra emociones para ver la curva':'Sin registros en este período')+'</div>' : ''}
       </div>
       <div class="card">
-        <div class="card-head"><div><h3 class="card-title">🥧 Distribución de emociones</h3><p class="card-sub">% que ocupa cada emoción en tu historial</p></div></div>
+        <div class="card-head"><div><h3 class="card-title">🥧 Distribución de emociones</h3><p class="card-sub">% del tiempo que ocupa cada emoción</p></div></div>
         <div class="chart-wrap" style="height:260px"><canvas id="chartConsciousnessDonut"></canvas></div>
-        ${!hasLogs ? '<div class="text-xs text-muted" style="text-align:center;padding:14px">Registra emociones para ver la repartición</div>' : ''}
+        ${!hasLogs ? '<div class="text-xs text-muted" style="text-align:center;padding:14px">'+(filter.mode==='all'?'Registra emociones para ver la repartición':'Sin registros en este período')+'</div>' : ''}
       </div>
     </div>
 
@@ -5042,9 +5158,9 @@ function renderConsciousness() {
 
   html += `</div></div>`;
 
-  // Monthly summary
+  // Monthly summary — always uses ALL logs (it's already grouped by month, cross-period view)
   const byMonth = {};
-  logs.forEach(l => {
+  allLogs.forEach(l => {
     if (!l.date) return;
     const key = l.date.slice(0,7);
     if (!byMonth[key]) byMonth[key] = [];
@@ -5053,7 +5169,8 @@ function renderConsciousness() {
   const months = Object.keys(byMonth).sort().reverse();
   const MONTH_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  if (months.length) {
+  // Only show monthly summary in 'all' mode (when filtering by period, the summary is redundant)
+  if (filter.mode === 'all' && months.length) {
     html += `
       <div class="card mt-24">
         <div class="card-head"><div><h3 class="card-title">📅 Resumen mensual</h3><p class="card-sub">Cómo vibraste cada mes</p></div></div>
@@ -5098,11 +5215,15 @@ function renderConsciousness() {
     `;
   }
 
-  // History
-  const recentLogs = logs.slice().sort((a,b) => (b.date+(b.time||'')).localeCompare(a.date+(a.time||''))).slice(0, 30);
+  // History — uses filtered logs (so user sees only that period's records)
+  const recentLogs = logs.slice().sort((a,b) => (b.date+(b.time||'')).localeCompare(a.date+(a.time||''))).slice(0, 50);
+  const historyTitle = filter.mode === 'all' ? '📝 Registros recientes' : '📝 Registros del período';
+  const historySub = filter.mode === 'all'
+    ? `${logs.length} registro${logs.length===1?'':'s'} en total`
+    : `${logs.length} en ${filterLabel.toLowerCase()}`;
   html += `
     <div class="card cons-history-card">
-      <div class="card-head"><div><h3 class="card-title">📝 Registros recientes</h3><p class="card-sub">${logs.length} registro${logs.length===1?'':'s'} en total</p></div></div>
+      <div class="card-head"><div><h3 class="card-title">${historyTitle}</h3><p class="card-sub">${historySub}</p></div></div>
       ${recentLogs.length ? recentLogs.map(l => {
         const lev = getHawkinsLevel(l.level);
         const dur = Number(l.duration) || 60;
@@ -5116,21 +5237,21 @@ function renderConsciousness() {
           <div class="cons-history-level">${l.level}</div>
           <button class="icon-btn danger" onclick="deleteConsciousnessLog('${l.id}')">✕</button>
         </div>`;
-      }).join('') : empty('✨','Sin registros aún. Click en cualquier emoción arriba para empezar.')}
+      }).join('') : empty('✨', filter.mode==='all' ? 'Sin registros aún. Click en cualquier emoción arriba para empezar.' : 'Sin registros en este período.')}
     </div>
   `;
 
   mount.innerHTML = html;
 
-  // Render charts after the DOM is in place
+  // Render charts after the DOM is in place — pass filtered logs
   if (hasLogs) {
-    renderConsciousnessLineChart();
-    renderConsciousnessDonut();
+    renderConsciousnessLineChart(logs);
+    renderConsciousnessDonut(logs);
   }
 }
 
-function renderConsciousnessLineChart() {
-  const logs = state.consciousness.logs || [];
+function renderConsciousnessLineChart(filteredLogs) {
+  const logs = filteredLogs || getFilteredConsciousnessLogs();
   if (!logs.length) return;
   const canvas = el('chartConsciousnessLine');
   if (!canvas) return;
@@ -5249,8 +5370,8 @@ function renderConsciousnessLineChart() {
   });
 }
 
-function renderConsciousnessDonut() {
-  const logs = state.consciousness.logs || [];
+function renderConsciousnessDonut(filteredLogs) {
+  const logs = filteredLogs || getFilteredConsciousnessLogs();
   if (!logs.length) return;
   // Aggregate by emotion name, summing DURATION in minutes (fallback 60min for old entries without duration)
   const byName = {};
