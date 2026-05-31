@@ -1488,7 +1488,43 @@ textarea{resize:vertical;min-height:70px}
 .cons-row.high:hover{background:rgba(16,185,129,.08)}
 .cons-level{font-weight:800;font-size:15px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;text-align:right}
 .cons-color{width:14px;height:34px;border-radius:4px;flex-shrink:0}
-.cons-name{font-weight:700;font-size:14px;color:var(--text)}
+.cons-name{font-weight:700;font-size:14px;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.cons-name:hover{color:var(--primary)}
+.cons-info-icon{
+  display:inline-grid;place-items:center;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--surface-3);color:var(--text-3);
+  font-size:10px;font-weight:700;font-style:normal;
+  transition:all .15s;
+}
+.cons-name:hover .cons-info-icon{background:var(--primary);color:var(--btn-primary-text)}
+
+/* Duration input for consciousness logging */
+.duration-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;
+}
+.duration-input{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;padding:6px 12px;
+}
+.duration-input input{
+  border:none;background:transparent;padding:6px 0;
+  font-size:18px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;
+  color:var(--text);outline:none;width:60px;text-align:center;
+}
+.duration-input input:focus{box-shadow:none}
+.duration-label{font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.duration-presets{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;
+}
+.preset-chip{
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:999px;padding:5px 11px;
+  font-size:11.5px;font-weight:700;color:var(--text-2);
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.preset-chip:hover{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
 .cons-emotion{font-size:12px;color:var(--text-2);font-weight:500}
 .cons-process{font-size:12px;color:var(--text-3);font-weight:500;font-style:italic}
 .cons-log-btn{
@@ -1751,6 +1787,28 @@ body.auth-mode .app{display:block;min-height:100vh}
 .auth-btn-secondary{background:#F0F0F0;color:#1A1A1A}
 .auth-btn-secondary:hover{background:#E5E5E5}
 
+/* Mobile drawer toggle */
+.mobile-menu-btn{
+  display:none;
+  width:38px;height:38px;
+  align-items:center;justify-content:center;
+  background:var(--primary-soft);
+  border:1px solid color-mix(in srgb,var(--primary) 30%,var(--border));
+  border-radius:10px;color:var(--primary);
+  cursor:pointer;flex-shrink:0;margin-right:10px;
+  transition:all .2s;
+}
+.mobile-menu-btn:hover{background:var(--primary);color:var(--btn-primary-text)}
+.mobile-menu-btn:active{transform:scale(.92)}
+
+.mobile-drawer-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  z-index:99;animation:fadeIn .2s ease;
+}
+.mobile-drawer-overlay.open{display:block}
+body.drawer-open{overflow:hidden}
+
 /* Bottom Navigation (Mobile) */
 .bottom-nav{
   display:none;position:fixed;bottom:0;left:0;right:0;height:65px;
@@ -1777,14 +1835,26 @@ body.auth-mode .app{display:block;min-height:100vh}
    RESPONSIVE DESIGN — MOBILE FIRST
    ============================================================ */
 @media(max-width:768px){
-  /* Layout — hide sidebar, show bottom nav */
+  /* Layout — single column with sidebar as drawer */
   .app{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .bottom-nav{display:flex}
+  .bottom-nav{display:none !important}        /* ocultamos bottom nav viejo (no funcionaba) */
+  .mobile-menu-btn{display:flex}              /* mostramos hamburguesa */
 
-  /* Main content — add padding for bottom nav */
+  /* Sidebar como drawer deslizante desde izquierda */
+  .sidebar{
+    display:flex;
+    position:fixed;top:0;left:0;
+    width:84%;max-width:300px;height:100vh;
+    z-index:100;
+    transform:translateX(-100%);
+    transition:transform .3s ease;
+    box-shadow:0 0 40px rgba(0,0,0,.3);
+  }
+  .sidebar.open{transform:translateX(0)}
+
+  /* Main sin padding para bottom nav */
   .main{padding-bottom:0}
-  .page{padding:16px 16px 80px}
+  .page{padding:16px 16px 40px}
 
   /* Topbar adjustments */
   .topbar{padding:12px 16px;flex-wrap:wrap}
@@ -1850,10 +1920,13 @@ body.auth-mode .app{display:block;min-height:100vh}
 <body>
 <div class="app">
 
+<!-- Mobile drawer overlay -->
+<div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="closeMobileDrawer()"></div>
+
 <!-- ============================================================
      SIDEBAR
      ============================================================ -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-icon">L</div>
     <div>
@@ -2026,6 +2099,9 @@ body.auth-mode .app{display:block;min-height:100vh}
     </div>
   </section>
   <div class="topbar">
+    <button class="mobile-menu-btn" id="btnMobileMenu" onclick="toggleMobileDrawer()" aria-label="Abrir menú">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="topbar-title">
       <h1 id="pageTitle">Resumen</h1>
       <p id="pageSubtitle">Vista general de todas tus áreas</p>

@@ -441,6 +441,27 @@ function navigate(page) {
   renderPage(page);
   renderVisions();
   updateAlertDots();
+  // Cerrar drawer en mobile al navegar
+  if (typeof closeMobileDrawer === 'function') closeMobileDrawer();
+  // Scroll al inicio para que se vea el cambio de página
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toggleMobileDrawer() {
+  const sb = el('sidebar');
+  const ov = el('mobileDrawerOverlay');
+  if (!sb || !ov) return;
+  const isOpen = sb.classList.toggle('open');
+  ov.classList.toggle('open', isOpen);
+  document.body.classList.toggle('drawer-open', isOpen);
+}
+
+function closeMobileDrawer() {
+  const sb = el('sidebar');
+  const ov = el('mobileDrawerOverlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('open');
+  document.body.classList.remove('drawer-open');
 }
 
 function renderPage(page) {
@@ -3174,17 +3195,55 @@ function importExcelForPage(file){
 
 /* ─── EXPORT / IMPORT ────────────────────────────────────── */
 function exportData(){
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  // Include metadata to help debug/restore across devices
+  const payload = {
+    __meta: {
+      app: 'Life Dashboard',
+      version: 3,
+      exportedAt: new Date().toISOString(),
+      user: getCurrentUser() || 'anonymous',
+      device: navigator.userAgent.slice(0, 80),
+    },
+    state,
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`life-dashboard-${today()}.json`;a.click();URL.revokeObjectURL(url);
+  const user = getCurrentUser() || 'usuario';
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`life-dashboard-${user}-${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function importData(file){
   if(!file)return;
+  if (!confirm('⚠️ Importar SOBRESCRIBIRÁ todos tus datos actuales con los del archivo.\n\n¿Quieres continuar?\n\n(Si tenías algo importante, primero haz "Exportar JSON" para respaldo.)')) {
+    return;
+  }
   const reader=new FileReader();
   reader.onload=e=>{
-    try{state=deepMerge(defaultData(),JSON.parse(e.target.result));saveState();applyDarkMode();renderPage(currentPage);updateAlertDots();alert('✅ Datos importados');}
-    catch(err){alert('Error al importar: '+err.message);}
+    try {
+      const raw = JSON.parse(e.target.result);
+      // Support both formats: legacy (just state) and new (wrapped with __meta)
+      const stateToImport = raw.__meta && raw.state ? raw.state : raw;
+      state = deepMerge(defaultData(), stateToImport);
+      saveState();
+      // Full refresh of everything
+      if (typeof migrateTaskAreas === 'function') migrateTaskAreas();
+      applyDarkMode();
+      if (typeof applyChartDefaults === 'function') applyChartDefaults();
+      if (typeof refreshSidebarAvatar === 'function') refreshSidebarAvatar();
+      renderPage(currentPage);
+      updateAlertDots();
+      const meta = raw.__meta;
+      const msg = meta
+        ? `✅ Datos importados correctamente.\n\nExportado: ${new Date(meta.exportedAt).toLocaleString('es-ES')}\nUsuario: ${meta.user}\nDispositivo: ${meta.device.slice(0,40)}...`
+        : '✅ Datos importados correctamente.';
+      alert(msg);
+    } catch(err) {
+      alert('❌ Error al importar: ' + err.message + '\n\nVerifica que el archivo sea un JSON válido exportado desde Life Dashboard.');
+    }
   };
   reader.readAsText(file);
 }
@@ -4872,26 +4931,64 @@ function resetPomo() {
    ═══════════════════════════════════════════════════════════ */
 const HAWKINS_SCALE = [
   // High vibration (≥200 = integrity)
-  { level:1000, name:'Iluminación', emotion:'Inefable',     process:'Ser puro',      color:'#FFFFFF', textColor:'#000' },
-  { level:700,  name:'Iluminación', emotion:'Inefable',     process:'Pura conciencia', color:'#F5F5F5', textColor:'#000' },
-  { level:600,  name:'Paz',         emotion:'Bienaventuranza', process:'Iluminación',   color:'#FEF3C7' },
-  { level:540,  name:'Alegría',     emotion:'Serenidad',    process:'Transfiguración',  color:'#FDE68A' },
-  { level:500,  name:'Amor',        emotion:'Reverencia',   process:'Revelación',       color:'#A7F3D0' },
-  { level:400,  name:'Razón',       emotion:'Comprensión',  process:'Abstracción',      color:'#86EFAC' },
-  { level:350,  name:'Aceptación',  emotion:'Perdón',       process:'Trascendencia',    color:'#6EE7B7' },
-  { level:310,  name:'Voluntad',    emotion:'Optimismo',    process:'Intención',        color:'#5EEAD4' },
-  { level:250,  name:'Neutralidad', emotion:'Confianza',    process:'Liberación',       color:'#67E8F9' },
-  { level:200,  name:'Coraje',      emotion:'Afirmación',   process:'Empoderamiento',   color:'#7DD3FC', isThreshold:true },
+  { level:1000, name:'Iluminación', emotion:'Inefable',     process:'Ser puro',      color:'#FFFFFF', textColor:'#000',
+    description:'El nivel más alto de conciencia alcanzable mientras se está en cuerpo humano. Solo unos pocos seres (Buda, Cristo, Krishna) lo han encarnado. Pura conciencia, no-dualidad, unión completa con la divinidad. Trascender por completo el ego, los pensamientos y la identificación con la forma. Estado de "yo soy" más allá del tiempo.' },
+  { level:700,  name:'Iluminación', emotion:'Inefable',     process:'Pura conciencia', color:'#F5F5F5', textColor:'#000',
+    description:'Estado de iluminación temprana. Las palabras se vuelven inadecuadas para describir la experiencia. El sentido del "yo" se ha disuelto y la conciencia descansa en su propia naturaleza. Quienes alcanzan este nivel se convierten en maestros espirituales que elevan la conciencia colectiva de la humanidad.' },
+  { level:600,  name:'Paz',         emotion:'Bienaventuranza', process:'Iluminación',   color:'#FEF3C7',
+    description:'Bienaventuranza. Trascendencia de las dualidades del mundo. El silencio interior se vuelve permanente. La belleza está en todo. Se ve la perfección detrás de las apariencias. Solo 1 de cada 10 millones alcanza este nivel. Asociado con experiencias místicas y estados contemplativos profundos.' },
+  { level:540,  name:'Alegría',     emotion:'Serenidad',    process:'Transfiguración',  color:'#FDE68A',
+    description:'Compasión incondicional por todo lo que vive. Felicidad interior independiente de las circunstancias externas. Energía sanadora. Las personas en este nivel irradian paz y elevan el ánimo de quienes los rodean. Estados de gratitud profunda, asombro y belleza.' },
+  { level:500,  name:'Amor',        emotion:'Reverencia',   process:'Revelación',       color:'#A7F3D0',
+    description:'Amor incondicional — una forma de ser, no una emoción. No depende de circunstancias ni se contamina con necesidad o deseo. Acepta lo que es sin juzgar. Solo el 4% de la población mundial vive desde aquí. La vida fluye naturalmente, las relaciones se vuelven nutritivas, sanas las heridas.' },
+  { level:400,  name:'Razón',       emotion:'Comprensión',  process:'Abstracción',      color:'#86EFAC',
+    description:'El nivel de la ciencia, la filosofía, la medicina. Capacidad de pensar de forma abstracta y discernir. Comprensión profunda del mundo. Hawkins identifica a Einstein, Newton y Freud aquí. Es poderoso pero limitado: la razón sola no puede acceder a la verdad espiritual más alta. El paso a Amor (500) es el salto más difícil.' },
+  { level:350,  name:'Aceptación',  emotion:'Perdón',       process:'Trascendencia',    color:'#6EE7B7',
+    description:'Reconocer que tú eres la fuente y creador de tu propia experiencia. Liberación del rol de víctima. El perdón se vuelve natural. Vivir armoniosamente con lo que la vida trae. No es resignación pasiva, es aceptación activa de la realidad sin resistencia.' },
+  { level:310,  name:'Voluntad',    emotion:'Optimismo',    process:'Intención',        color:'#5EEAD4',
+    description:'Disposición genuina a hacer lo que sea necesario. Compromiso, dedicación, servicio. La voluntad de aprender, crecer, contribuir. Las personas son confiables, productivas, optimistas. Es donde el éxito sostenible empieza a manifestarse de forma natural.' },
+  { level:250,  name:'Neutralidad', emotion:'Confianza',    process:'Liberación',       color:'#67E8F9',
+    description:'Soltar las resistencias. Sin necesidad de tener razón ni de probar nada a nadie. Vivir y dejar vivir. Confianza básica en la vida. Las personas son flexibles, fáciles de tratar, sin posturas rígidas. "Lo que sea, está bien".' },
+  { level:200,  name:'Coraje',      emotion:'Afirmación',   process:'Empoderamiento',   color:'#7DD3FC', isThreshold:true,
+    description:'🔑 EL PUNTO DE PODER. Por encima de 200 la energía es constructiva y vivificante; por debajo, destructiva. Coraje para enfrentar la verdad sin huir. Empoderamiento. Es donde el verdadero crecimiento empieza. Quienes calibran aquí enfrentan la realidad sin negación.' },
   // Below 200 = destructive
-  { level:175,  name:'Orgullo',     emotion:'Desprecio',    process:'Inflación del ego', color:'#FCD34D' },
-  { level:150,  name:'Ira',         emotion:'Odio',         process:'Agresión',          color:'#FB923C' },
-  { level:125,  name:'Deseo',       emotion:'Anhelo',       process:'Esclavitud',        color:'#F87171' },
-  { level:100,  name:'Miedo',       emotion:'Ansiedad',     process:'Aislamiento',       color:'#EF4444' },
-  { level:75,   name:'Pena',        emotion:'Arrepentimiento', process:'Desaliento',     color:'#B91C1C', textColor:'#fff' },
-  { level:50,   name:'Apatía',      emotion:'Desesperación', process:'Renuncia',         color:'#7F1D1D', textColor:'#fff' },
-  { level:30,   name:'Culpa',       emotion:'Acusación',    process:'Destrucción',       color:'#451A03', textColor:'#fff' },
-  { level:20,   name:'Vergüenza',   emotion:'Humillación',  process:'Eliminación',       color:'#1C1917', textColor:'#fff' },
+  { level:175,  name:'Orgullo',     emotion:'Desprecio',    process:'Inflación del ego', color:'#FCD34D',
+    description:'Falsa sensación de superioridad basada en logros, posesiones o posiciones externas. Se siente bien al inicio pero es vulnerable a la humillación. Negación, defensa del ego. "Yo soy mejor que tú". Cae rápidamente cuando los logros se pierden.' },
+  { level:150,  name:'Ira',         emotion:'Odio',         process:'Agresión',          color:'#FB923C',
+    description:'Energía de movilización pero destructiva. Resentimiento, frustración, resentimiento. Puede ser productiva al sacar a alguien de la apatía (50) hacia el coraje (200), pero quedarse aquí es tóxico. Se proyecta hacia los demás como ataque.' },
+  { level:125,  name:'Deseo',       emotion:'Anhelo',       process:'Esclavitud',        color:'#F87171',
+    description:'Anhelo y codicia. Adicción, ya sea a sustancias, personas, dinero, fama. Querer constantemente más. Esclavitud al ego. La satisfacción dura segundos y vuelve la insatisfacción. Motor del consumismo y la obsesión.' },
+  { level:100,  name:'Miedo',       emotion:'Ansiedad',     process:'Aislamiento',       color:'#EF4444',
+    description:'Preocupación, ansiedad, paranoia, pánico. Genera contracción en la vida. El opuesto al valor. Pensar siempre en lo peor que puede pasar. Inseguridad. Limita las decisiones y la expansión personal. Aislamiento porque el mundo se ve peligroso.' },
+  { level:75,   name:'Pena',        emotion:'Arrepentimiento', process:'Desaliento',     color:'#B91C1C', textColor:'#fff',
+    description:'Tristeza profunda, pérdida, arrepentimiento. Energía pesada. Pasado no resuelto que pesa en el presente. Llanto, melancolía. El mundo se ve gris. Puede ser sano si se procesa, pero quedarse atrapado aquí es destructivo.' },
+  { level:50,   name:'Apatía',      emotion:'Desesperación', process:'Renuncia',         color:'#7F1D1D', textColor:'#fff',
+    description:'Sin esperanza, sin energía, indiferencia total. Estado de víctima. La persona se rinde, ya no le importa nada. Necesita ayuda externa para salir porque no tiene la energía interna. Cercano a los que pierden la voluntad de vivir.' },
+  { level:30,   name:'Culpa',       emotion:'Acusación',    process:'Destrucción',       color:'#451A03', textColor:'#fff',
+    description:'Auto-castigo, masoquismo, vergüenza interna por algo hecho. Es el nivel donde aparecen las ideas suicidas. La persona se acusa constantemente. Cercano a la depresión profunda. "No merezco vivir / amar / ser feliz".' },
+  { level:20,   name:'Vergüenza',   emotion:'Humillación',  process:'Eliminación',       color:'#1C1917', textColor:'#fff',
+    description:'El nivel más bajo. Cercano a la muerte. Humillación profunda. Deseo de desaparecer, de no existir. Auto-aborrecimiento extremo. Persona destruida internamente. Cuerpos calibrados aquí literalmente no sostienen la vida por mucho tiempo.' },
 ];
+
+function showHawkinsDescription(level) {
+  const h = HAWKINS_SCALE.find(x => x.level === level);
+  if (!h) return;
+  const textColor = h.textColor || '#000';
+  openModal(`${h.name} · Nivel ${h.level}`, `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:${h.color};color:${textColor};border-radius:12px;padding:18px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;opacity:.7;margin-bottom:4px">Nivel ${h.level}${h.isThreshold?' · 🔑 PUNTO DE PODER':''}</div>
+        <div style="font-size:26px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.02em">${h.name}</div>
+        <div style="font-size:13px;font-weight:600;margin-top:6px;opacity:.85">${h.emotion} · ${h.process}</div>
+      </div>
+      <div style="font-size:14px;line-height:1.7;color:var(--text-2)">${escapeHtml(h.description || 'Sin descripción disponible.')}</div>
+      <div style="background:var(--surface-2);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--text-3);line-height:1.5">
+        <strong style="color:var(--primary)">Dr. David R. Hawkins</strong> — del libro <em>Power vs. Force</em>. La escala mide niveles de conciencia del 1 al 1000, donde 200 marca el punto crítico entre energía constructiva (integridad) y destructiva.
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="closeModal();logConsciousness(${level})">+ Registrar que vibro en ${h.name}</button>
+    </div>
+  `, () => true);
+}
 
 function getHawkinsLevel(level) {
   return HAWKINS_SCALE.find(x => x.level === level) || HAWKINS_SCALE[HAWKINS_SCALE.length-1];
@@ -4938,7 +5035,7 @@ function renderConsciousness() {
     html += `<div class="${cls.join(' ')}" onclick="logConsciousness(${h.level})" title="Click para registrar">
       <div class="cons-level">${h.level}</div>
       <div class="cons-color" style="background:${h.color};border:1px solid var(--border)"></div>
-      <div class="cons-name">${h.name}${h.isThreshold?' · 🔑':''}</div>
+      <div class="cons-name" onclick="event.stopPropagation();showHawkinsDescription(${h.level})" title="Click para ver descripción">${h.name}${h.isThreshold?' · 🔑':''} <span class="cons-info-icon">ⓘ</span></div>
       <button class="cons-log-btn" onclick="event.stopPropagation();logConsciousness(${h.level})">+ Sentir</button>
     </div>`;
   });
@@ -4963,17 +5060,18 @@ function renderConsciousness() {
         <div class="cons-month-summary-grid">
           ${months.map(key => {
             const items = byMonth[key];
-            const avg = Math.round(items.reduce((s,l)=>s+Number(l.level||0),0)/items.length);
+            // Weighted average by duration (so 8h of peace weighs more than 5min of anger)
+            const totalMin = items.reduce((s,l) => s + (Number(l.duration)||60), 0);
+            const weightedSum = items.reduce((s,l) => s + Number(l.level||0)*(Number(l.duration)||60), 0);
+            const avg = totalMin > 0 ? Math.round(weightedSum/totalMin) : 0;
             const lev = closestHawkinsLevel(avg);
-            // Most frequent emotion
-            const freq = {};
-            items.forEach(l => { const n = l.levelName || getHawkinsLevel(l.level).name; freq[n] = (freq[n]||0)+1; });
-            const topEmotion = Object.entries(freq).sort((a,b) => b[1]-a[1])[0];
+            // Predominant emotion BY DURATION (not by count)
+            const byDur = {};
+            items.forEach(l => { const n = l.levelName || getHawkinsLevel(l.level).name; byDur[n] = (byDur[n]||0) + (Number(l.duration)||60); });
+            const topEmotion = Object.entries(byDur).sort((a,b) => b[1]-a[1])[0];
+            const topPct = totalMin > 0 ? Math.round((topEmotion[1]/totalMin)*100) : 0;
             const [y,m] = key.split('-');
             const monthLabel = `${MONTH_FULL[Number(m)-1]} ${y}`;
-            // Range
-            const levels = items.map(l => Number(l.level||0));
-            const minL = Math.min(...levels), maxL = Math.max(...levels);
             return `<div class="cons-month-card" style="border-left:4px solid ${lev.color}">
               <div class="cons-month-card-head">
                 <div class="cons-month-card-title">${monthLabel}</div>
@@ -4981,16 +5079,16 @@ function renderConsciousness() {
               </div>
               <div class="cons-month-card-body">
                 <div class="cons-month-stat">
-                  <div class="lbl">Promedio</div>
-                  <div class="val" style="color:${lev.textColor==='#fff'?lev.color:'var(--text)'}">${avg} · ${lev.name}</div>
+                  <div class="lbl">Promedio ponderado</div>
+                  <div class="val">${avg} · ${lev.name}</div>
                 </div>
                 <div class="cons-month-stat">
-                  <div class="lbl">Rango</div>
-                  <div class="val">${minL} → ${maxL}</div>
+                  <div class="lbl">Tiempo total</div>
+                  <div class="val">${formatDuration(totalMin)}</div>
                 </div>
                 <div class="cons-month-stat">
                   <div class="lbl">Predominante</div>
-                  <div class="val">${escapeHtml(topEmotion[0])} <span class="text-xs text-muted">(${topEmotion[1]}x)</span></div>
+                  <div class="val">${escapeHtml(topEmotion[0])} <span class="text-xs text-muted">${topPct}%</span></div>
                 </div>
               </div>
             </div>`;
@@ -5007,11 +5105,12 @@ function renderConsciousness() {
       <div class="card-head"><div><h3 class="card-title">📝 Registros recientes</h3><p class="card-sub">${logs.length} registro${logs.length===1?'':'s'} en total</p></div></div>
       ${recentLogs.length ? recentLogs.map(l => {
         const lev = getHawkinsLevel(l.level);
+        const dur = Number(l.duration) || 60;
         return `<div class="cons-history-row">
           <div class="cons-history-dot" style="background:${lev.color}"></div>
           <div class="cons-history-name-block">
             <div class="nm">${lev.name}</div>
-            <div class="sub">${fmt(l.date)}${l.emotion?' · '+escapeHtml(l.emotion):''}</div>
+            <div class="sub">${fmt(l.date)} · ⏱ ${formatDuration(dur)}${l.emotion?' · '+escapeHtml(l.emotion):''}</div>
           </div>
           <div class="cons-history-note">${l.note?escapeHtml(l.note):'<span style="color:var(--text-3);font-style:italic">Sin nota</span>'}</div>
           <div class="cons-history-level">${l.level}</div>
@@ -5153,20 +5252,22 @@ function renderConsciousnessLineChart() {
 function renderConsciousnessDonut() {
   const logs = state.consciousness.logs || [];
   if (!logs.length) return;
+  // Aggregate by emotion name, summing DURATION in minutes (fallback 60min for old entries without duration)
   const byName = {};
   logs.forEach(l => {
     const name = l.levelName || getHawkinsLevel(l.level).name;
-    byName[name] = (byName[name] || 0) + 1;
+    const dur = Number(l.duration) || 60;   // backwards-compat: entries before duration default to 60min
+    byName[name] = (byName[name] || 0) + dur;
   });
   const entries = Object.entries(byName).sort((a,b) => {
     const la = (HAWKINS_SCALE.find(x => x.name === a[0])?.level) || 0;
     const lb = (HAWKINS_SCALE.find(x => x.name === b[0])?.level) || 0;
     return lb - la;
   });
-  const total = entries.reduce((s,e) => s + e[1], 0);
+  const totalMin = entries.reduce((s,e) => s + e[1], 0);
   const labels = entries.map(e => {
-    const pct = total > 0 ? Math.round((e[1]/total)*100) : 0;
-    return `${e[0]} ${pct}%`;
+    const pct = totalMin > 0 ? Math.round((e[1]/totalMin)*100) : 0;
+    return `${e[0]} · ${pct}%`;
   });
   const data = entries.map(e => e[1]);
   const colors = labels.map((_, i) => HAWKINS_SCALE.find(x => x.name === entries[i][0])?.color || '#94A3B8');
@@ -5185,8 +5286,8 @@ function renderConsciousnessDonut() {
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11, weight: '600' }, boxWidth: 10, padding: 12, usePointStyle: true } },
         tooltip: { callbacks: { label: ctx => {
-          const pct = total > 0 ? Math.round((ctx.parsed/total)*100) : 0;
-          return ` ${entries[ctx.dataIndex][0]}: ${ctx.parsed} (${pct}%)`;
+          const pct = totalMin > 0 ? Math.round((ctx.parsed/totalMin)*100) : 0;
+          return ` ${entries[ctx.dataIndex][0]}: ${formatDuration(ctx.parsed)} (${pct}%)`;
         }}},
       },
     },
@@ -5212,14 +5313,35 @@ function logConsciousness(level) {
         <div style="font-size:22px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;margin:4px 0">${h.name}</div>
         <div style="font-size:13px;opacity:.85">${h.emotion} · ${h.process}</div>
       </div>
+
+      <div class="field">
+        <label>⏱ ¿Cuánto tiempo duró esta emoción?</label>
+        <div class="duration-row">
+          <div class="duration-input"><input id="f-cons-hours" type="number" min="0" max="24" class="input" value="0"><span class="duration-label">horas</span></div>
+          <div class="duration-input"><input id="f-cons-mins" type="number" min="0" max="59" class="input" value="30"><span class="duration-label">min</span></div>
+        </div>
+        <div class="duration-presets">
+          <button type="button" class="preset-chip" onclick="el('f-cons-hours').value=0;el('f-cons-mins').value=5">5 min</button>
+          <button type="button" class="preset-chip" onclick="el('f-cons-hours').value=0;el('f-cons-mins').value=30">30 min</button>
+          <button type="button" class="preset-chip" onclick="el('f-cons-hours').value=1;el('f-cons-mins').value=0">1 h</button>
+          <button type="button" class="preset-chip" onclick="el('f-cons-hours').value=2;el('f-cons-mins').value=0">2 h</button>
+          <button type="button" class="preset-chip" onclick="el('f-cons-hours').value=4;el('f-cons-mins').value=0">4 h</button>
+          <button type="button" class="preset-chip" onclick="el('f-cons-hours').value=8;el('f-cons-mins').value=0">8 h (jornada)</button>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="field"><label>Fecha</label><input id="f-cons-date" type="date" class="input" value="${today()}"></div>
-        <div class="field"><label>Hora</label><input id="f-cons-time" type="time" class="input" value="${new Date().toTimeString().slice(0,5)}"></div>
+        <div class="field"><label>Hora de inicio</label><input id="f-cons-time" type="time" class="input" value="${new Date().toTimeString().slice(0,5)}"></div>
       </div>
       <div class="field"><label>Emoción específica (opcional)</label><input id="f-cons-emotion" class="input" placeholder="ej. gratitud, irritación, calma..."></div>
       <div class="field"><label>Nota / contexto (opcional)</label><textarea id="f-cons-note" class="input" rows="2" placeholder="¿Qué pasó? ¿Por qué te sentiste así?"></textarea></div>
     </div>
   `, () => {
+    const hours = Number(el('f-cons-hours').value) || 0;
+    const mins = Number(el('f-cons-mins').value) || 0;
+    const duration = hours * 60 + mins;
+    if (duration <= 0) { alert('⚠️ Indica cuánto tiempo duró la emoción'); return false; }
     state.consciousness = state.consciousness || { logs:[] };
     state.consciousness.logs.push({
       id: uid(),
@@ -5227,11 +5349,21 @@ function logConsciousness(level) {
       time: el('f-cons-time').value || '',
       level,
       levelName: h.name,
+      duration,            // ← minutos totales
       emotion: el('f-cons-emotion').value.trim(),
       note: el('f-cons-note').value.trim(),
     });
     return true;
   });
+}
+
+function formatDuration(min) {
+  if (!min || min <= 0) return '—';
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
 }
 
 /* ─── REVISIÓN SEMANAL V2 ───────────────────────────────── */

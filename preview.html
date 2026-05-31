@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Preview — Life Dashboard Warm Theme</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   WARM THEME PREVIEW — naranjas, amarillos, rojos
+   Dark mode (default) + Light mode con toggle
+   ============================================================ */
+:root,
+:root[data-theme="dark"] {
+  --bg: #0A0A0A;
+  --surface: #141414;
+  --surface-2: #1C1C1C;
+  --surface-3: #262626;
+  --border: #2A2A2A;
+  --border-strong: #3A3A3A;
+
+  --text: #FFFFFF;
+  --text-2: #C7C7C7;
+  --text-3: #707070;
+
+  --primary: #FF6B35;
+  --primary-2: #EA580C;
+  --primary-soft: rgba(255,107,53,.14);
+  --primary-glow: rgba(255,107,53,.35);
+
+  --amber: #FCD34D;
+  --red: #F43F5E;
+  --green: #10B981;
+
+  --grad-warm: linear-gradient(135deg, #F43F5E 0%, #F97316 50%, #FCD34D 100%);
+  --grad-orange: linear-gradient(135deg, #FF6B35, #FCD34D);
+  --grad-red: linear-gradient(135deg, #F43F5E, #F97316);
+  --grad-card: linear-gradient(180deg, rgba(255,107,53,0.04), transparent);
+
+  --bg-radial-1: rgba(244,63,94,.12);
+  --bg-radial-2: rgba(252,211,77,.08);
+  --bg-radial-3: rgba(255,107,53,.1);
+
+  --sidebar-bg: #060606;
+  --card-bg: linear-gradient(180deg, rgba(28,28,28,.85), rgba(20,20,20,.85));
+  --kpi-bg: linear-gradient(180deg, rgba(28,28,28,.9), rgba(15,15,15,.9));
+  --task-bg: rgba(255,255,255,.03);
+  --task-hover-bg: rgba(255,107,53,.06);
+  --task-overdue-bg: rgba(244,63,94,.08);
+  --topbar-bg: rgba(10,10,10,.85);
+  --btn-primary-text: #1a0a00;
+  --btn-secondary-bg: rgba(255,255,255,.05);
+  --hero-pill-bg: rgba(20,20,20,.7);
+  --pomo-shadow: 0 0 60px rgba(255,107,53,.25), inset 0 0 30px rgba(255,107,53,.1);
+  --heatmap-empty: rgba(255,255,255,.04);
+
+  --radius: 14px;
+  --radius-lg: 20px;
+  --shadow-glow: 0 12px 40px rgba(255,107,53,.18);
+  --shadow-card: 0 8px 24px rgba(0,0,0,.4);
+}
+
+:root[data-theme="light"] {
+  --bg: #FAF7F3;                 /* off-white cálido */
+  --surface: #FFFFFF;
+  --surface-2: #FDF8F2;
+  --surface-3: #F4ECE2;
+  --border: #EDE2D4;
+  --border-strong: #D9C9B3;
+
+  --text: #0F0F0F;               /* casi negro */
+  --text-2: #525252;             /* gris medio */
+  --text-3: #999188;             /* gris cálido suave */
+
+  --primary: #EA580C;            /* naranja un poco más oscuro para contraste sobre claro */
+  --primary-2: #C2410C;
+  --primary-soft: rgba(234,88,12,.12);
+  --primary-glow: rgba(234,88,12,.22);
+
+  --amber: #F59E0B;
+  --red: #E11D48;
+  --green: #059669;
+
+  --grad-warm: linear-gradient(135deg, #E11D48 0%, #EA580C 50%, #F59E0B 100%);
+  --grad-orange: linear-gradient(135deg, #EA580C, #F59E0B);
+  --grad-red: linear-gradient(135deg, #E11D48, #EA580C);
+
+  --bg-radial-1: rgba(225,29,72,.06);
+  --bg-radial-2: rgba(245,158,11,.07);
+  --bg-radial-3: rgba(234,88,12,.06);
+
+  --sidebar-bg: #FFFFFF;
+  --card-bg: #FFFFFF;
+  --kpi-bg: linear-gradient(180deg, #FFFFFF, #FDF8F2);
+  --task-bg: #FDF8F2;
+  --task-hover-bg: rgba(234,88,12,.08);
+  --task-overdue-bg: rgba(225,29,72,.08);
+  --topbar-bg: rgba(255,255,255,.92);
+  --btn-primary-text: #FFFFFF;
+  --btn-secondary-bg: #FFFFFF;
+  --hero-pill-bg: rgba(255,255,255,.95);
+  --pomo-shadow: 0 0 60px rgba(234,88,12,.15), inset 0 0 30px rgba(234,88,12,.05);
+  --heatmap-empty: #EDE2D4;
+
+  --shadow-glow: 0 12px 30px rgba(234,88,12,.18);
+  --shadow-card: 0 6px 18px rgba(0,0,0,.06);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(circle at 0% 0%, var(--bg-radial-1), transparent 45%),
+    radial-gradient(circle at 100% 100%, var(--bg-radial-2), transparent 45%),
+    radial-gradient(circle at 100% 0%, var(--bg-radial-3), transparent 50%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  transition: background-color .3s, color .3s;
+}
+
+h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.01em}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar{
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  padding: 22px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.brand{
+  display:flex;align-items:center;gap:10px;
+  padding: 4px 10px 22px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.brand-icon{
+  width:38px;height:38px;border-radius:12px;
+  background: var(--grad-warm);
+  display:grid;place-items:center;
+  color:#fff;font-weight:900;font-size:18px;
+  box-shadow: 0 8px 24px rgba(244,63,94,.4);
+}
+.brand-name{font-weight:800;font-size:15px;font-family:'Plus Jakarta Sans',sans-serif}
+.brand-sub{font-size:11px;color:var(--text-3);font-weight:500;margin-top:1px}
+.nav-section{
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-3);
+  font-weight: 700;
+  padding: 14px 12px 6px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s ease;
+  position: relative;
+}
+.nav-item:hover{background: rgba(255,107,53,.06); color: var(--text)}
+.nav-item.active{
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:8px;bottom:8px;
+  width:3px;
+  background: var(--grad-orange);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+.nav-item .ico{width:17px;height:17px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2}
+.alert-dot{margin-left:auto;width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red)}
+
+.sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border)}
+.btn-ghost{
+  display:flex;align-items:center;gap:9px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  color: var(--text-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+.btn-ghost:hover{background: rgba(255,255,255,.04); color: var(--text)}
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+.main{padding: 0;overflow-x:hidden}
+.topbar{
+  background: var(--topbar-bg);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topbar-title h1{font-size:22px;font-weight:800;color:var(--text)}
+.topbar-title p{font-size:12px;color:var(--text-3);margin-top:2px}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.date-chip{
+  background: rgba(255,107,53,.1);
+  border: 1px solid rgba(255,107,53,.3);
+  color: #FFB48C;
+  padding: 6px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.page{padding: 26px 32px 80px}
+
+/* ============================================================
+   HERO / GREETING
+   ============================================================ */
+.hero{
+  text-align: center;
+  padding: 36px 20px 28px;
+  position: relative;
+}
+.hero-eyebrow{
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+.hero-greeting{
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  color: #fff;
+}
+.hero-greeting .accent{
+  background: var(--grad-warm);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+.hero-meta{
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.hero-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--hero-pill-bg);
+  border: 1px solid rgba(234,88,12,.25);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .2s;
+  backdrop-filter: blur(8px);
+}
+.hero-pill:hover{
+  border-color: var(--primary);
+  box-shadow: 0 0 16px var(--primary-glow);
+}
+.hero-wave{
+  margin: 24px auto 0;
+  max-width: 700px;
+  height: 80px;
+  position: relative;
+}
+.hero-wave svg{width:100%;height:100%;display:block}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card{
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-card);
+}
+.card:hover{border-color: rgba(255,107,53,.3)}
+.card-head{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 10px;
+}
+.card-title{font-size:15px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif}
+.card-sub{font-size:12px;color:var(--text-3);margin-top:3px;font-weight:500}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.mt-24{margin-top:24px}.mt-32{margin-top:32px}
+
+/* ============================================================
+   KPI CARDS
+   ============================================================ */
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.kpi{
+  background: var(--kpi-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: all .25s ease;
+  box-shadow: var(--shadow-card);
+}
+.kpi::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background: var(--grad-orange);
+}
+.kpi.success::before{background: linear-gradient(90deg,#10B981,#34D399)}
+.kpi.danger::before{background: linear-gradient(90deg,#F43F5E,#F97316)}
+.kpi.amber::before{background: linear-gradient(90deg,#FCD34D,#FB923C)}
+.kpi:hover{
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-glow);
+  border-color: rgba(255,107,53,.35);
+}
+.kpi-label{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-3);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.kpi-value{
+  font-size: 36px;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans',sans-serif;
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.kpi-value .unit{font-size:18px;color:var(--text-3);font-weight:600;margin-left:3px}
+.kpi-foot{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.kpi-foot .up{color: var(--green)}
+.kpi-foot .down{color: var(--red)}
+
+/* ============================================================
+   AREA CARDS (Centro de control)
+   ============================================================ */
+.areas-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+.area-card{
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all .2s;
+  box-shadow: var(--shadow-card);
+}
+.area-card:hover{
+  border-color: rgba(255,107,53,.3);
+  transform: translateY(-2px);
+}
+.area-head{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.area-title-wrap{display:flex;align-items:center;gap:8px}
+.area-icon{font-size: 18px}
+.area-title{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.btn-icon-add{
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(234,88,12,.3);
+  background: var(--primary-soft);
+  color: var(--primary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 700;
+  transition: all .2s;
+}
+.btn-icon-add:hover{
+  background: var(--primary);
+  color: var(--btn-primary-text);
+  box-shadow: 0 0 14px var(--primary-glow);
+}
+.task-row{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--task-bg);
+  border-radius: 9px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: all .15s;
+  border-left: 3px solid transparent;
+}
+.task-row:hover{background: var(--task-hover-bg); border-left-color: var(--primary)}
+.task-row.done{opacity:.45}
+.task-row.done .task-row-title{text-decoration: line-through}
+.task-row.priority-urgent{border-left-color: var(--red)}
+.task-row.priority-important{border-left-color: var(--amber)}
+.task-row.overdue{
+  background: var(--task-overdue-bg);
+  border-left-color: var(--red);
+}
+.task-check{
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all .15s;
+}
+.task-check.checked{
+  background: var(--grad-orange);
+  border-color: transparent;
+  color: var(--btn-primary-text);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+.task-row-main{flex:1}
+.task-row-title{font-size:13px;font-weight:500;color:var(--text)}
+.task-row-meta{font-size:11px;color:var(--text-3);margin-top:3px;display:flex;gap:8px}
+.overdue-badge{
+  background: var(--red);
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid transparent;
+  transition: all .2s ease;
+}
+.btn:active{transform: scale(.97)}
+.btn-primary{
+  background: var(--grad-orange);
+  color: var(--btn-primary-text);
+  box-shadow: 0 8px 20px var(--primary-glow);
+}
+.btn-primary:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px var(--primary-glow);
+}
+.btn-secondary{
+  background: var(--btn-secondary-bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-secondary:hover{background: var(--task-hover-bg); border-color: var(--primary)}
+.btn-danger{
+  background: rgba(225,29,72,.12);
+  color: var(--red);
+  border-color: rgba(225,29,72,.4);
+}
+.btn-danger:hover{background: var(--red); color:#fff}
+.btn-sm{padding: 7px 12px; font-size: 12px}
+
+/* ============================================================
+   GOAL CARDS
+   ============================================================ */
+.goal-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .25s ease;
+  box-shadow: var(--shadow-card);
+}
+.goal-card:hover{
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-glow);
+  border-color: rgba(255,107,53,.4);
+}
+.goal-cover{
+  height: 160px;
+  background: var(--grad-warm);
+  display: grid;
+  place-items: center;
+  font-size: 56px;
+  color: #fff;
+  position: relative;
+}
+.goal-cover::after{
+  content:'';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,.5));
+}
+.goal-status{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  z-index: 1;
+  backdrop-filter: blur(6px);
+}
+.goal-status.late{background: var(--red); color: #fff}
+.goal-status.ontrack{background: var(--green); color: #fff}
+.goal-body{padding: 14px 16px}
+.goal-due{
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 6px;
+}
+.goal-due.overdue{color: var(--red)}
+.goal-title{
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.progress{
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar{
+  height: 100%;
+  background: var(--grad-orange);
+  border-radius: 999px;
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+.goal-progress-meta{
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.goal-progress-meta strong{color: #fff; font-size: 13px}
+
+/* ============================================================
+   POMODORO
+   ============================================================ */
+.pomo-card{
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.pomo-card::before{
+  content:'';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, var(--primary-glow), transparent 70%);
+  pointer-events: none;
+  opacity: .55;
+}
+.pomo-circle{
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  margin: 18px auto;
+  background: conic-gradient(var(--primary) 65%, var(--surface-3) 0);
+  display: grid;
+  place-items: center;
+  position: relative;
+  box-shadow: var(--pomo-shadow);
+}
+.pomo-circle::before{
+  content:'';
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.pomo-content{position: relative; z-index: 1; text-align: center}
+.pomo-time{
+  font-size: 44px;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -.03em;
+  background: var(--grad-orange);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pomo-label{
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.pomo-controls{
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+  position: relative;
+  z-index: 1;
+}
+.pomo-btn{
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  transition: all .2s;
+}
+.pomo-btn.play{
+  background: var(--grad-orange);
+  box-shadow: 0 8px 20px var(--primary-glow);
+  color: var(--btn-primary-text);
+}
+.pomo-btn.stop{
+  background: rgba(225,29,72,.15);
+  color: var(--red);
+  border: 1px solid rgba(225,29,72,.4);
+}
+.pomo-btn:hover{transform: scale(1.1)}
+
+/* ============================================================
+   HEATMAP
+   ============================================================ */
+.heatmap{
+  display: grid;
+  grid-template-columns: 30px repeat(28, 14px);
+  grid-template-rows: 18px repeat(7, 14px);
+  gap: 3px;
+}
+.heatmap-month{
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.heatmap-day{
+  font-size: 10.5px;
+  color: var(--text-3);
+  font-weight: 600;
+  text-align: right;
+  padding-right: 6px;
+  line-height: 14px;
+}
+.heatmap-cell{
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--heatmap-empty);
+  border: 1px solid transparent;
+}
+.heatmap-cell.l1{background: rgba(234,88,12,.35)}
+.heatmap-cell.l2{background: rgba(234,88,12,.65)}
+.heatmap-cell.l3{
+  background: var(--grad-orange);
+  box-shadow: 0 0 6px var(--primary-glow);
+}
+.heatmap-cell.today{border-color: var(--amber); box-shadow: 0 0 6px rgba(252,211,77,.5)}
+
+/* ============================================================
+   DONUT (consciousness)
+   ============================================================ */
+.donut-card{
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 24px;
+}
+.donut{
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      var(--primary) 0% 28%,
+      var(--amber) 28% 50%,
+      var(--red) 50% 70%,
+      #FB923C 70% 88%,
+      #92400E 88% 100%
+    );
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 40px var(--primary-glow);
+}
+.donut::before{
+  content:'';
+  position: absolute;
+  inset: 34%;
+  background: var(--surface);
+  border-radius: 50%;
+}
+.donut-legend{flex: 1; display: flex; flex-direction: column; gap: 9px}
+.legend-row{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.legend-color{
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.legend-name{flex: 1; font-weight: 600; color: var(--text)}
+.legend-pct{font-weight: 800; color: #fff; font-size: 14px}
+
+/* ============================================================
+   HAWKINS LINE CHART (svg)
+   ============================================================ */
+.line-chart{
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 18px;
+  position: relative;
+}
+.line-chart svg{width:100%;height:260px;display:block}
+
+/* ============================================================
+   HAWKINS TABLE
+   ============================================================ */
+.cons-table{
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+.cons-row{
+  display: grid;
+  grid-template-columns: 60px 14px 1fr 80px;
+  gap: 14px;
+  padding: 12px 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .15s;
+}
+.cons-row:hover{background: var(--task-hover-bg)}
+.cons-row:last-child{border-bottom: none}
+.cons-row.threshold{background: var(--primary-soft)}
+.cons-level{
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text);
+  text-align: right;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.cons-color{
+  width: 14px;
+  height: 34px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.cons-name{font-weight: 700; font-size: 14px; color: var(--text)}
+.cons-log-btn{
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--primary-soft);
+  border: 1px solid rgba(234,88,12,.3);
+  border-radius: 7px;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all .15s;
+}
+.cons-log-btn:hover{
+  background: var(--primary);
+  color: var(--btn-primary-text);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+.cons-threshold-line{
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  padding: 8px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  border-top: 1px dashed rgba(255,107,53,.4);
+  border-bottom: 1px dashed rgba(255,107,53,.4);
+}
+
+/* ============================================================
+   SECTION HEADERS
+   ============================================================ */
+.section-label{
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin: 36px 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-label::after{
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ============================================================
+   PREVIEW BANNER + THEME TOGGLE
+   ============================================================ */
+.preview-banner{
+  background: var(--grad-warm);
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a0a00;
+  text-align: center;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 0 rgba(255,255,255,.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+}
+.theme-toggle{
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 16px 8px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+  transition: all .2s;
+}
+.theme-toggle:hover{
+  border-color: var(--primary);
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+.theme-toggle .icon{
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--grad-orange);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  color: var(--btn-primary-text);
+}
+</style>
+</head>
+<body>
+
+<div class="preview-banner">
+  <span>🎨 PREVIEW · Tema cálido — vista previa, no afecta tu dashboard real</span>
+</div>
+
+<button class="theme-toggle" onclick="togglePreviewTheme()">
+  <span class="icon" id="themeIcon">🌙</span>
+  <span id="themeLabel">Cambiar a modo claro</span>
+</button>
+
+<script>
+  function togglePreviewTheme() {
+    const root = document.documentElement;
+    const cur = root.getAttribute('data-theme') || 'dark';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    document.getElementById('themeIcon').textContent = next === 'dark' ? '🌙' : '☀️';
+    document.getElementById('themeLabel').textContent = next === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    localStorage.setItem('preview-theme', next);
+  }
+  // Restore previous choice
+  (function(){
+    const saved = localStorage.getItem('preview-theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('themeIcon').textContent = saved === 'dark' ? '🌙' : '☀️';
+      document.getElementById('themeLabel').textContent = saved === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">L</div>
+    <div>
+      <div class="brand-name">Life Dashboard</div>
+      <div class="brand-sub">Tu vida en control</div>
+    </div>
+  </div>
+
+  <div class="nav-item active">
+    <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    Centro de control
+    <span class="alert-dot"></span>
+  </div>
+
+  <div class="nav-section">Áreas</div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M21 13.255A23.93 23.93 0 0 1 12 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2m4 7h.01M5 20h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
+    Negocios
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Salud
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M6.5 6.5L17.5 17.5M3 7l4-4M21 17l-4 4M7 3L3 7l3 3M21 17l-3-3M14 6l4 4M18 10l-4-4M9.5 14.5L14.5 9.5"/></svg>
+    Ejercicio
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+    Familia
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Finanzas
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    Aprendizaje
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    Metas
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Agenda
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Hábitos
+  </div>
+  <div class="nav-item">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/></svg>
+    Nivel de conciencia
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="btn-ghost">
+      <span style="width:22px;height:22px;border-radius:50%;background:var(--grad-orange);color:#000;display:grid;place-items:center;font-weight:900;font-size:11px">A</span>
+      Mi perfil
+    </button>
+    <button class="btn-ghost">🔍 Buscar (Ctrl+K)</button>
+    <button class="btn-ghost">🌙 Modo oscuro</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1>Centro de control</h1>
+    <p>Tu día y tus áreas en un vistazo</p>
+  </div>
+  <div class="topbar-actions">
+    <span class="date-chip">jue, 26 may 2026</span>
+    <button class="btn btn-secondary btn-sm">📥 Excel</button>
+    <button class="btn btn-primary btn-sm">+ Agregar</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <p class="hero-eyebrow">MOSTRAR LÍNEA DE TIEMPO</p>
+    <h1 class="hero-greeting">¿Te levantaste temprano? <span class="accent">ya vas adelante.</span></h1>
+    <div class="hero-meta">
+      <button class="hero-pill">📅 Hoy, 26 de Mayo</button>
+      <span style="color:var(--text-2)">tienes <strong style="color:#fff">4 hábitos</strong> y <strong style="color:#fff">8 tareas</strong>.</span>
+    </div>
+    <div class="hero-wave">
+      <svg viewBox="0 0 700 80" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="waveGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#F43F5E"/>
+            <stop offset="50%" stop-color="#F97316"/>
+            <stop offset="100%" stop-color="#FCD34D"/>
+          </linearGradient>
+          <filter id="waveGlow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <path d="M0,40 Q70,15 140,40 T280,40 T420,40 T560,40 T700,40" stroke="url(#waveGrad)" stroke-width="3" fill="none" filter="url(#waveGlow)"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="section-label">KPIs del día</div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Tareas completadas</div>
+      <div class="kpi-value">14<span class="unit">/18</span></div>
+      <div class="kpi-foot"><span class="up">↑ 78%</span> · vs semana pasada</div>
+    </div>
+    <div class="kpi success">
+      <div class="kpi-label">Consistencia hábitos</div>
+      <div class="kpi-value">86<span class="unit">%</span></div>
+      <div class="kpi-foot">🔥 5 días seguidos</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Tareas vencidas</div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-foot"><span class="down">↓ 2</span> · vs semana pasada</div>
+    </div>
+    <div class="kpi danger">
+      <div class="kpi-label">Tiempo enfocado</div>
+      <div class="kpi-value">4.2<span class="unit">h</span></div>
+      <div class="kpi-foot">8 sesiones pomodoro</div>
+    </div>
+  </div>
+
+  <!-- AREAS -->
+  <div class="section-label">Áreas del día</div>
+  <div class="areas-grid">
+    <!-- Pendiente -->
+    <div class="area-card">
+      <div class="area-head">
+        <div class="area-title-wrap"><span class="area-icon">⏱</span><span class="area-title">Pendiente</span></div>
+        <button class="btn-icon-add">+</button>
+      </div>
+      <div class="task-row overdue">
+        <div class="task-check"></div>
+        <div class="task-row-main">
+          <div class="task-row-title">Reunión con equipo de diseño</div>
+          <div class="task-row-meta"><span class="overdue-badge">⚠ 2d vencida</span></div>
+        </div>
+      </div>
+      <div class="task-row priority-urgent">
+        <div class="task-check"></div>
+        <div class="task-row-main">
+          <div class="task-row-title">Enviar propuesta a cliente</div>
+          <div class="task-row-meta">🕐 14:00 - 15:30</div>
+        </div>
+      </div>
+      <div class="task-row priority-important">
+        <div class="task-check"></div>
+        <div class="task-row-main"><div class="task-row-title">Revisar contratos</div></div>
+      </div>
+      <div class="task-row done">
+        <div class="task-check checked">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="task-row-main"><div class="task-row-title">Llamar al banco</div></div>
+      </div>
+    </div>
+
+    <!-- Hábitos -->
+    <div class="area-card">
+      <div class="area-head">
+        <div class="area-title-wrap"><span class="area-icon">🔁</span><span class="area-title">Hábitos</span></div>
+        <button class="btn-icon-add">+</button>
+      </div>
+      <div class="task-row done">
+        <div class="task-check checked">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="task-row-main"><div class="task-row-title">Despertar 6am</div></div>
+      </div>
+      <div class="task-row done">
+        <div class="task-check checked">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="task-row-main"><div class="task-row-title">Meditación 10 min</div></div>
+      </div>
+      <div class="task-row">
+        <div class="task-check"></div>
+        <div class="task-row-main"><div class="task-row-title">Leer 20 páginas</div></div>
+      </div>
+      <div class="task-row">
+        <div class="task-check"></div>
+        <div class="task-row-main"><div class="task-row-title">2L de agua</div></div>
+      </div>
+    </div>
+
+    <!-- Salud -->
+    <div class="area-card">
+      <div class="area-head">
+        <div class="area-title-wrap"><span class="area-icon">💪</span><span class="area-title">Salud</span></div>
+        <button class="btn-icon-add">+</button>
+      </div>
+      <div class="task-row">
+        <div class="task-check"></div>
+        <div class="task-row-main"><div class="task-row-title">Estiramiento 15 min</div></div>
+      </div>
+      <div class="task-row done">
+        <div class="task-check checked">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="task-row-main"><div class="task-row-title">Tomar suplementos AM</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- METAS -->
+  <div class="section-label">Mis metas activas</div>
+  <div class="grid-3">
+    <div class="goal-card">
+      <div class="goal-cover" style="background: linear-gradient(135deg,#F43F5E,#7C2D12)">
+        🎯
+        <span class="goal-status ontrack">En curso</span>
+      </div>
+      <div class="goal-body">
+        <div class="goal-due">📅 Faltan 89 días</div>
+        <div class="goal-title">Negocios: Alianza Multinivel</div>
+        <div class="progress"><div class="progress-bar" style="width:42%"></div></div>
+        <div class="goal-progress-meta">
+          <span>Monto</span>
+          <span><strong>3,200</strong>/8,000 US$</span>
+        </div>
+      </div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-cover" style="background: linear-gradient(135deg,#FCD34D,#EA580C)">
+        💼
+      </div>
+      <div class="goal-body">
+        <div class="goal-due">📅 Faltan 124 días</div>
+        <div class="goal-title">Marca Personal Consolidada</div>
+        <div class="progress"><div class="progress-bar" style="width:68%"></div></div>
+        <div class="goal-progress-meta">
+          <span>Progreso</span>
+          <span><strong>68</strong>%</span>
+        </div>
+      </div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-cover" style="background: linear-gradient(135deg,#FB923C,#F43F5E)">
+        🏋
+        <span class="goal-status late">Vencida</span>
+      </div>
+      <div class="goal-body">
+        <div class="goal-due overdue">📅 Vencida hace 5d</div>
+        <div class="goal-title">Llegar a 75kg de músculo</div>
+        <div class="progress"><div class="progress-bar" style="width:30%;background:linear-gradient(90deg,#F43F5E,#F97316)"></div></div>
+        <div class="goal-progress-meta">
+          <span>Conteo</span>
+          <span><strong>4</strong>/15 series</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POMODORO + DONUT -->
+  <div class="section-label">Pomodoro y emociones</div>
+  <div class="grid-2">
+    <div class="pomo-card">
+      <div style="font-size:13px;font-weight:800;color:var(--text-3);letter-spacing:.08em;text-transform:uppercase;position:relative;z-index:1">Focus Timer</div>
+      <div class="pomo-circle">
+        <div class="pomo-content">
+          <div class="pomo-time">17:42</div>
+          <div class="pomo-label">Deep Work</div>
+        </div>
+      </div>
+      <div class="pomo-controls">
+        <button class="pomo-btn play">▶</button>
+        <button class="pomo-btn stop">⏹</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h3 class="card-title">🥧 Distribución de emociones</h3><p class="card-sub">% que ocupa cada emoción</p></div>
+      </div>
+      <div class="donut-card" style="padding:0">
+        <div class="donut"></div>
+        <div class="donut-legend">
+          <div class="legend-row"><div class="legend-color" style="background:#FF6B35"></div><div class="legend-name">Coraje</div><div class="legend-pct">28%</div></div>
+          <div class="legend-row"><div class="legend-color" style="background:#FCD34D"></div><div class="legend-name">Aceptación</div><div class="legend-pct">22%</div></div>
+          <div class="legend-row"><div class="legend-color" style="background:#F43F5E"></div><div class="legend-name">Ira</div><div class="legend-pct">20%</div></div>
+          <div class="legend-row"><div class="legend-color" style="background:#FB923C"></div><div class="legend-name">Voluntad</div><div class="legend-pct">18%</div></div>
+          <div class="legend-row"><div class="legend-color" style="background:#92400E"></div><div class="legend-name">Miedo</div><div class="legend-pct">12%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINE CHART -->
+  <div class="section-label">Fluctuación de vibración</div>
+  <div class="card">
+    <div class="card-head">
+      <div><h3 class="card-title">📈 Cómo se mueve tu nivel de conciencia</h3><p class="card-sub">Últimos 30 días · líneas de referencia en 310 (Voluntad) y 400 (Razón)</p></div>
+    </div>
+    <div class="line-chart">
+      <svg viewBox="0 0 700 260" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FCD34D" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#F43F5E" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#F43F5E"/>
+            <stop offset="50%" stop-color="#F97316"/>
+            <stop offset="100%" stop-color="#FCD34D"/>
+          </linearGradient>
+          <filter id="chartGlow">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Reference lines -->
+        <line x1="0" y1="100" x2="700" y2="100" stroke="#FCD34D" stroke-opacity="0.4" stroke-dasharray="6,5" stroke-width="2"/>
+        <text x="10" y="95" fill="#FCD34D" font-size="10" font-weight="700">Razón (400)</text>
+        <line x1="0" y1="160" x2="700" y2="160" stroke="#22D3EE" stroke-opacity="0.4" stroke-dasharray="6,5" stroke-width="2"/>
+        <text x="10" y="175" fill="#22D3EE" font-size="10" font-weight="700">Voluntad (310)</text>
+        <!-- Fill -->
+        <path d="M0,180 L80,165 L160,140 L240,120 L320,95 L400,110 L480,80 L560,130 L640,90 L700,60 L700,260 L0,260 Z" fill="url(#lineGrad)"/>
+        <!-- Stroke -->
+        <path d="M0,180 L80,165 L160,140 L240,120 L320,95 L400,110 L480,80 L560,130 L640,90 L700,60" stroke="url(#strokeGrad)" stroke-width="3" fill="none" filter="url(#chartGlow)"/>
+        <!-- Points -->
+        <circle cx="0" cy="180" r="5" fill="#F43F5E" stroke="#fff" stroke-width="2"/>
+        <circle cx="80" cy="165" r="5" fill="#FB923C" stroke="#fff" stroke-width="2"/>
+        <circle cx="160" cy="140" r="5" fill="#FCD34D" stroke="#fff" stroke-width="2"/>
+        <circle cx="240" cy="120" r="5" fill="#FCD34D" stroke="#fff" stroke-width="2"/>
+        <circle cx="320" cy="95" r="5" fill="#FCD34D" stroke="#fff" stroke-width="2"/>
+        <circle cx="400" cy="110" r="5" fill="#FCD34D" stroke="#fff" stroke-width="2"/>
+        <circle cx="480" cy="80" r="5" fill="#10B981" stroke="#fff" stroke-width="2"/>
+        <circle cx="560" cy="130" r="5" fill="#FB923C" stroke="#fff" stroke-width="2"/>
+        <circle cx="640" cy="90" r="5" fill="#10B981" stroke="#fff" stroke-width="2"/>
+        <circle cx="700" cy="60" r="5" fill="#FFFFFF" stroke="#FF6B35" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="section-label">Consistencia de ejercicio</div>
+  <div class="card">
+    <div class="card-head">
+      <div><h3 class="card-title">🔥 Heatmap de sesiones</h3><p class="card-sub">Cada celda = un día · verde = sesión completada</p></div>
+    </div>
+    <div class="heatmap">
+      <!-- Month labels -->
+      <div></div>
+      <div class="heatmap-month" style="grid-column: span 4">MAY</div>
+      <div class="heatmap-month" style="grid-column: span 5">JUN</div>
+      <div class="heatmap-month" style="grid-column: span 4">JUL</div>
+      <div class="heatmap-month" style="grid-column: span 5">AGO</div>
+      <div class="heatmap-month" style="grid-column: span 4">SEP</div>
+      <div class="heatmap-month" style="grid-column: span 4">OCT</div>
+      <div class="heatmap-month" style="grid-column: span 2">NOV</div>
+
+      <!-- 7 rows of 28 cells -->
+      <!-- Row 1 (Lun) -->
+      <div class="heatmap-day">Lun</div>
+      <div class="heatmap-cell l1"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell l1"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l1"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+
+      <div class="heatmap-day">Mar</div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l1"></div><div class="heatmap-cell"></div>
+
+      <div class="heatmap-day">Mié</div>
+      <div class="heatmap-cell l1"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell today l2"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+
+      <div class="heatmap-day">Jue</div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell l1"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l1"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l1"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+
+      <div class="heatmap-day">Vie</div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l3"></div><div class="heatmap-cell l3"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+
+      <div class="heatmap-day">Sáb</div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell l2"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l1"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell l2"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell l1"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+
+      <div class="heatmap-day">Dom</div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+      <div class="heatmap-cell"></div><div class="heatmap-cell"></div>
+    </div>
+  </div>
+
+  <!-- HAWKINS TABLE -->
+  <div class="section-label">Escala de Hawkins</div>
+  <div class="cons-table">
+    <div class="cons-row"><div class="cons-level">1000</div><div class="cons-color" style="background:#fff"></div><div class="cons-name">Iluminación</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-row"><div class="cons-level">600</div><div class="cons-color" style="background:#FEF3C7"></div><div class="cons-name">Paz</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-row"><div class="cons-level">500</div><div class="cons-color" style="background:#A7F3D0"></div><div class="cons-name">Amor</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-row"><div class="cons-level">400</div><div class="cons-color" style="background:#86EFAC"></div><div class="cons-name">Razón</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-row"><div class="cons-level">350</div><div class="cons-color" style="background:#6EE7B7"></div><div class="cons-name">Aceptación</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-row threshold"><div class="cons-level">200</div><div class="cons-color" style="background:#7DD3FC"></div><div class="cons-name">Coraje · 🔑</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-threshold-line">↑ Integridad — Energía constructiva ↑ ━━━ ↓ Energía destructiva ↓</div>
+    <div class="cons-row"><div class="cons-level">175</div><div class="cons-color" style="background:#FCD34D"></div><div class="cons-name">Orgullo</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-row"><div class="cons-level">150</div><div class="cons-color" style="background:#FB923C"></div><div class="cons-name">Ira</div><button class="cons-log-btn">+ Sentir</button></div>
+    <div class="cons-row"><div class="cons-level">100</div><div class="cons-color" style="background:#EF4444"></div><div class="cons-name">Miedo</div><button class="cons-log-btn">+ Sentir</button></div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="section-label">Botones y elementos</div>
+  <div class="card">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-primary">+ Nueva tarea</button>
+      <button class="btn btn-secondary">📥 Importar</button>
+      <button class="btn btn-danger">🗑 Eliminar</button>
+      <button class="btn btn-primary btn-sm">+ Agregar</button>
+      <button class="btn btn-secondary btn-sm">Cancelar</button>
+    </div>
+  </div>
+
+</div>
+
+</main>
+
+</div>
+
+</body>
+</html>
