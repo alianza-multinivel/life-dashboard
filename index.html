@@ -1106,6 +1106,53 @@ textarea{resize:vertical;min-height:70px}
   display:grid;gap:6px;min-width:max-content;
   align-items:center;
 }
+/* Each habit lives in its own subgrid row so it can be dragged as a unit */
+.habits-grid-header,
+.habits-grid-row{
+  display:grid;
+  grid-column:1 / -1;
+  grid-template-columns:subgrid;
+  gap:6px;
+  align-items:center;
+  border-radius:8px;
+  padding:2px 4px;
+  position:relative;
+  transition:background .15s, opacity .15s, transform .15s;
+}
+.habits-grid-row{cursor:default;border:2px solid transparent}
+.habits-grid-row:hover{background:color-mix(in srgb,var(--primary) 5%,transparent)}
+.habits-grid-row.habit-dragging{
+  opacity:.4;
+  background:var(--primary-soft);
+  transform:scale(.98);
+}
+.habits-grid-row.habit-drop-above{
+  border-top:2px solid var(--primary);
+  box-shadow:0 -8px 16px -8px var(--primary-glow);
+}
+.habits-grid-row.habit-drop-below{
+  border-bottom:2px solid var(--primary);
+  box-shadow:0 8px 16px -8px var(--primary-glow);
+}
+
+/* Drag handle on the name cell */
+.habit-drag-handle{
+  display:inline-grid;place-items:center;
+  width:22px;height:26px;
+  background:transparent;border:none;
+  color:var(--text-3);cursor:grab;flex-shrink:0;
+  border-radius:6px;
+  transition:all .15s;
+  touch-action:none;   /* critical for mobile drag */
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+}
+.habit-drag-handle:hover{
+  background:var(--primary-soft);color:var(--primary);
+}
+.habit-drag-handle:active{cursor:grabbing;background:var(--primary);color:var(--btn-primary-text)}
+.habit-drag-handle svg{width:14px;height:14px;display:block}
 .habits-week-labels{
   display:contents;
 }

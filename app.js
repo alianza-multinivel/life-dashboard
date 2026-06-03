@@ -4049,6 +4049,17 @@ function renderHabits() {
 
   const habits = (state.unifiedTasks || []).filter(t => t.repeat && t.repeat.type !== 'none');
 
+  // Sort habits by user's saved order (drag-to-reorder persists here)
+  state.habits.order = state.habits.order || [];
+  habits.sort((a, b) => {
+    const ai = state.habits.order.indexOf(a.id);
+    const bi = state.habits.order.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;   // new habits at the end
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
   // Stats
   const totalPossibleToday = habits.filter(h => taskRunsOnDate(h, today_)).length;
   const completedToday = habits.filter(h => taskRunsOnDate(h, today_) && h.completionLog?.[today_]).length;
@@ -4080,14 +4091,14 @@ function renderHabits() {
   if (!habits.length) {
     html += `<div class="list-empty"><span class="big-emoji">🔁</span>Sin hábitos. Crea uno con "+ Nuevo hábito"<br><span class="text-xs text-muted">Cualquier tarea con repetición se vuelve hábito automáticamente</span></div>`;
   } else {
-    const colStyle = `grid-template-columns: 220px repeat(30, 22px) 60px`;
+    const colStyle = `grid-template-columns: 240px repeat(30, 22px) 60px`;
     html += `<div class="habits-grid" style="${colStyle}">`;
-    // Day number header
-    html += `<div></div>`;
+    // Header row (also uses subgrid so it aligns with habit rows)
+    html += `<div class="habits-grid-header"><div></div>`;
     for (let n = cycleStartDay; n <= cycleEndDay; n++) {
       html += `<div class="habits-day-num">${n}</div>`;
     }
-    html += `<div class="habits-day-num" title="Racha actual">🔥</div>`;
+    html += `<div class="habits-day-num" title="Racha actual">🔥</div></div>`;
 
     habits.forEach(h => {
       const startStr = h.date || h.createdAt || today_;
@@ -4095,7 +4106,16 @@ function renderHabits() {
       const daysSinceStart = Math.floor((todayDate - startDate) / 86400000);
       const currentDayNum = daysSinceStart + 1;
 
-      html += `<div class="habits-row-name" title="${escapeHtml(h.title)} · empezó ${fmt(startStr)}"><span class="dot" style="background:${h.area==='habits'?'var(--success)':'var(--primary)'}"></span>${escapeHtml(h.title)}<span class="text-xs text-muted" style="margin-left:6px;font-weight:500">D${Math.max(1,currentDayNum)}</span></div>`;
+      // Wrap each habit's row in a subgrid container so it can be dragged as a unit
+      html += `<div class="habits-grid-row" data-habit-id="${h.id}">`;
+      html += `<div class="habits-row-name" title="${escapeHtml(h.title)} · empezó ${fmt(startStr)}">
+        <button class="habit-drag-handle" onpointerdown="startHabitReorder(event, '${h.id}')" title="Arrastrar para reordenar" aria-label="Reordenar hábito">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="19" r="1.2"/><circle cx="15" cy="5" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="19" r="1.2"/></svg>
+        </button>
+        <span class="dot" style="background:${h.area==='habits'?'var(--success)':'var(--primary)'}"></span>
+        ${escapeHtml(h.title)}
+        <span class="text-xs text-muted" style="margin-left:6px;font-weight:500">D${Math.max(1,currentDayNum)}</span>
+      </div>`;
 
       for (let n = cycleStartDay; n <= cycleEndDay; n++) {
         // Day N for this habit = startDate + N - 1
@@ -4127,6 +4147,7 @@ function renderHabits() {
         else break;
       }
       html += `<div class="habits-row-streak">${streak}</div>`;
+      html += `</div>`;   // close habits-grid-row
     });
 
     html += `</div>`;
@@ -4134,6 +4155,131 @@ function renderHabits() {
 
   html += `</div></div>`;
   mount.innerHTML = html;
+}
+
+/* ─── HABITS DRAG-AND-DROP REORDER ───────────────────────── */
+let _habitDrag = null;
+
+function startHabitReorder(e, habitId) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.button !== undefined && e.button !== 0) return;  // only primary button
+  const handle = e.currentTarget;
+  const row = handle.closest('.habits-grid-row');
+  if (!row) return;
+
+  // Long press: 250ms before drag activates (allows normal clicks/scrolls)
+  const startX = e.clientX;
+  const startY = e.clientY;
+
+  const longPressTimer = setTimeout(() => {
+    _habitDrag = {
+      habitId,
+      row,
+      pointerId: e.pointerId,
+      targetId: null,
+      indicator: null,
+    };
+    row.classList.add('habit-dragging');
+    if (navigator.vibrate) try { navigator.vibrate(40); } catch(_){}
+
+    // Try to capture so we keep getting events even outside the element
+    try { handle.setPointerCapture(e.pointerId); } catch(_){}
+
+    document.addEventListener('pointermove', onHabitReorderMove, { passive: false });
+    document.addEventListener('pointerup', onHabitReorderEnd);
+    document.addEventListener('pointercancel', onHabitReorderEnd);
+  }, 250);
+
+  // If user moves significantly before long press triggers, cancel (treat as scroll)
+  const onEarlyMove = (ev) => {
+    const dx = Math.abs(ev.clientX - startX);
+    const dy = Math.abs(ev.clientY - startY);
+    if (dx > 8 || dy > 8) {
+      clearTimeout(longPressTimer);
+      document.removeEventListener('pointermove', onEarlyMove);
+    }
+  };
+  const onEarlyUp = () => {
+    clearTimeout(longPressTimer);
+    document.removeEventListener('pointermove', onEarlyMove);
+    document.removeEventListener('pointerup', onEarlyUp);
+  };
+  document.addEventListener('pointermove', onEarlyMove, { passive: true });
+  document.addEventListener('pointerup', onEarlyUp, { once: true });
+}
+
+function onHabitReorderMove(e) {
+  if (!_habitDrag) return;
+  e.preventDefault();
+
+  // Find which habit row the pointer is currently over
+  const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+  if (!elemBelow) return;
+  const targetRow = elemBelow.closest('.habits-grid-row');
+  if (!targetRow) return;
+  const targetId = targetRow.getAttribute('data-habit-id');
+  if (!targetId || targetId === _habitDrag.habitId) {
+    // hovering over self — clear indicator
+    clearHabitDropIndicator();
+    _habitDrag.targetId = null;
+    return;
+  }
+
+  // Determine if drop above or below the target row based on cursor Y
+  const rect = targetRow.getBoundingClientRect();
+  const isBelow = e.clientY > rect.top + rect.height / 2;
+
+  // Visual: indicator line above/below target
+  clearHabitDropIndicator();
+  targetRow.classList.add(isBelow ? 'habit-drop-below' : 'habit-drop-above');
+  _habitDrag.targetId = targetId;
+  _habitDrag.dropBelow = isBelow;
+}
+
+function clearHabitDropIndicator() {
+  document.querySelectorAll('.habit-drop-above,.habit-drop-below').forEach(el => {
+    el.classList.remove('habit-drop-above', 'habit-drop-below');
+  });
+}
+
+function onHabitReorderEnd(e) {
+  if (!_habitDrag) return;
+  document.removeEventListener('pointermove', onHabitReorderMove);
+  document.removeEventListener('pointerup', onHabitReorderEnd);
+  document.removeEventListener('pointercancel', onHabitReorderEnd);
+
+  const { habitId, targetId, dropBelow, row } = _habitDrag;
+  row.classList.remove('habit-dragging');
+  clearHabitDropIndicator();
+  _habitDrag = null;
+
+  if (targetId && targetId !== habitId) {
+    commitHabitReorder(habitId, targetId, dropBelow);
+  }
+}
+
+function commitHabitReorder(draggedId, targetId, dropBelow) {
+  state.habits = state.habits || {};
+  state.habits.order = state.habits.order || [];
+
+  // Build full current order: existing order + any habits not yet listed
+  const habits = (state.unifiedTasks || []).filter(t => t.repeat && t.repeat.type !== 'none');
+  let order = state.habits.order.filter(id => habits.find(h => h.id === id));
+  habits.forEach(h => { if (!order.includes(h.id)) order.push(h.id); });
+
+  const draggedIdx = order.indexOf(draggedId);
+  if (draggedIdx === -1) return;
+  order.splice(draggedIdx, 1);
+
+  let targetIdx = order.indexOf(targetId);
+  if (targetIdx === -1) return;
+  const insertAt = dropBelow ? targetIdx + 1 : targetIdx;
+  order.splice(insertAt, 0, draggedId);
+
+  state.habits.order = order;
+  saveState();
+  renderHabits();
 }
 
 function shiftHabitCycle(delta) {
