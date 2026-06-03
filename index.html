@@ -644,10 +644,32 @@ textarea{resize:vertical;min-height:70px}
   font-size:12.5px;font-weight:500;
 }
 .area-expand-more{
-  text-align:center;color:var(--text-3);font-size:12px;font-weight:600;
-  padding:8px;cursor:pointer;transition:color .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;border:none;background:transparent;
+  color:var(--text-3);font-size:12.5px;font-weight:700;
+  padding:10px;cursor:pointer;transition:all .2s;
+  font-family:inherit;margin-top:6px;
+  border-top:1px dashed var(--border);
 }
-.area-expand-more:hover{color:var(--primary)}
+.area-expand-more span{
+  display:inline-grid;place-items:center;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--surface-3);color:var(--text-2);
+  font-size:9px;transition:all .2s;
+}
+.area-expand-more:hover{color:var(--primary);background:var(--primary-soft)}
+.area-expand-more:hover span{background:var(--primary);color:var(--btn-primary-text)}
+.area-expand-more.collapsed span{transform:none}
+
+/* Count badge next to area title */
+.area-task-count{
+  display:inline-grid;place-items:center;
+  min-width:22px;height:20px;padding:0 7px;
+  border-radius:999px;
+  background:var(--surface-3);color:var(--text-2);
+  font-size:10.5px;font-weight:800;letter-spacing:.02em;
+  margin-left:6px;
+}
 
 /* Add Area Row */
 .add-area-row{margin:24px 0;text-align:center}
