@@ -1013,13 +1013,40 @@ function closeTaskModal() {
 }
 
 function saveTaskDraft() {
-  if (!window._taskDraft.title.trim()) { alert('⚠️ Pon un título a la tarea'); return; }
-  const isNew = !state.unifiedTasks.find(t => t.id === window._taskDraft.id);
-  const idx = state.unifiedTasks.findIndex(t => t.id === window._taskDraft.id);
-  if (idx >= 0) state.unifiedTasks[idx] = window._taskDraft;
-  else state.unifiedTasks.push(window._taskDraft);
-  saveState();
-  const savedTask = window._taskDraft;
+  // Safety net: defend against missing draft (race condition or DOM weirdness)
+  if (!window._taskDraft) {
+    alert('⚠️ Algo salió mal. Cierra el modal e intenta de nuevo.');
+    return;
+  }
+  // Sync any unsaved input values directly from DOM (in case oninput didn't fire)
+  const titleEl = el('f-task-title');
+  if (titleEl) window._taskDraft.title = titleEl.value;
+  const detailsEl = el('f-task-details');
+  if (detailsEl) window._taskDraft.details = detailsEl.value;
+
+  if (!window._taskDraft.title || !window._taskDraft.title.trim()) {
+    alert('⚠️ Pon un título a la tarea');
+    return;
+  }
+
+  // Ensure state.unifiedTasks is an array (in case of corrupted import or legacy)
+  if (!Array.isArray(state.unifiedTasks)) {
+    state.unifiedTasks = [];
+  }
+
+  let isNew;
+  try {
+    isNew = !state.unifiedTasks.find(t => t.id === window._taskDraft.id);
+    const idx = state.unifiedTasks.findIndex(t => t.id === window._taskDraft.id);
+    if (idx >= 0) state.unifiedTasks[idx] = window._taskDraft;
+    else state.unifiedTasks.push(window._taskDraft);
+    saveState();
+  } catch (e) {
+    console.error('saveTaskDraft error:', e);
+    alert('❌ Error al guardar la tarea: ' + e.message);
+    return;
+  }
+  const savedTask = JSON.parse(JSON.stringify(window._taskDraft));  // clone before closeTaskModal nulls it
   closeTaskModal();
 
   // Check if task appears on the currently-viewed date
