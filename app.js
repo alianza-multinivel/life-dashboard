@@ -1014,12 +1014,80 @@ function closeTaskModal() {
 
 function saveTaskDraft() {
   if (!window._taskDraft.title.trim()) { alert('⚠️ Pon un título a la tarea'); return; }
+  const isNew = !state.unifiedTasks.find(t => t.id === window._taskDraft.id);
   const idx = state.unifiedTasks.findIndex(t => t.id === window._taskDraft.id);
   if (idx >= 0) state.unifiedTasks[idx] = window._taskDraft;
   else state.unifiedTasks.push(window._taskDraft);
   saveState();
+  const savedTask = window._taskDraft;
   closeTaskModal();
-  renderPage(currentPage);
+
+  // Check if task appears on the currently-viewed date
+  const currentDate = getSelectedDate();
+  const today_ = today();
+  const appearsToday = taskRunsOnDate(savedTask, currentDate);
+
+  if (appearsToday) {
+    // Renders normally — task is visible in current view
+    renderPage(currentPage);
+    if (isNew) showToast(`✅ Tarea agregada: "${savedTask.title}"`);
+    else showToast(`✅ Cambios guardados`);
+  } else {
+    // Task is saved but won't appear in current view — find next occurrence
+    const nextDate = getNextTaskOccurrence(savedTask, currentDate);
+    renderPage(currentPage);
+    if (nextDate) {
+      const d = new Date(nextDate + 'T00:00');
+      const label = d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' });
+      showToast(`✅ Tarea guardada · Aparecerá el ${label}`, 'Ir a esa fecha', () => {
+        setSelectedDate(nextDate);
+      });
+    } else {
+      showToast(`✅ Tarea guardada`);
+    }
+  }
+}
+
+function getNextTaskOccurrence(task, fromDate) {
+  fromDate = fromDate || today();
+  const d = new Date(fromDate + 'T00:00');
+  for (let i = 0; i < 366; i++) {
+    const ds = d.toISOString().slice(0,10);
+    if (taskRunsOnDate(task, ds)) return ds;
+    d.setDate(d.getDate() + 1);
+  }
+  return null;
+}
+
+/* ─── TOAST NOTIFICATIONS ───────────────────────────────── */
+function showToast(message, actionLabel, actionFn) {
+  let toast = document.getElementById('appToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appToast';
+    toast.className = 'app-toast';
+    document.body.appendChild(toast);
+  }
+  // Build content
+  toast.innerHTML = `<span class="app-toast-msg">${escapeHtml(message)}</span>`;
+  if (actionLabel && typeof actionFn === 'function') {
+    const btn = document.createElement('button');
+    btn.className = 'app-toast-action';
+    btn.textContent = actionLabel;
+    btn.onclick = () => {
+      actionFn();
+      hideToast();
+    };
+    toast.appendChild(btn);
+  }
+  toast.classList.add('show');
+  if (window._toastTimer) clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(hideToast, actionLabel ? 6000 : 3000);
+}
+
+function hideToast() {
+  const toast = document.getElementById('appToast');
+  if (toast) toast.classList.remove('show');
 }
 
 /* ─── TASK MODAL DROPDOWNS ───────────────────────────────── */
