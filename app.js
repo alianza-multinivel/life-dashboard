@@ -778,12 +778,18 @@ function shiftSelectedDate(delta) {
 function renderBusinessGroupedPanel(mountId) {
   const mount = el(mountId);
   if (!mount) return;
-  const area = (state.taskAreas||[]).find(a => a.id === 'business');
-  if (!area) { mount.innerHTML = ''; return; }
+  // Ensure business area exists
+  state.taskAreas = state.taskAreas || [];
+  let area = state.taskAreas.find(a => a.id === 'business');
+  if (!area) {
+    area = { id:'business', name:'Negocios', icon:'💼', color:'#F97316', subcategories:[] };
+    state.taskAreas.push(area);
+    saveState();
+  }
   const businesses = area.subcategories || [];
   const d = getSelectedDate();
 
-  const allTasks = state.unifiedTasks
+  const allTasks = (state.unifiedTasks || [])
     .filter(t => t.area === 'business' && taskRunsOnDate(t, d))
     .sort((a,b) => {
       const dA = isTaskDone(a, d) ? 1 : 0;
@@ -793,9 +799,18 @@ function renderBusinessGroupedPanel(mountId) {
       return (pri[a.priority]||2) - (pri[b.priority]||2);
     });
 
+  // Collect orphan subcategories so no task gets hidden
+  const orphans = [];
+  allTasks.forEach(t => {
+    if (t.subcategory && !businesses.includes(t.subcategory) && !orphans.includes(t.subcategory)) {
+      orphans.push(t.subcategory);
+    }
+  });
+  const allBiz = [...businesses, ...orphans];
+
   const groups = [
     { id:'__general', name:'General', tasks: allTasks.filter(t => !t.subcategory) },
-    ...businesses.map(b => ({ id:b, name:b, tasks: allTasks.filter(t => t.subcategory === b) })),
+    ...allBiz.map(b => ({ id:b, name:b, tasks: allTasks.filter(t => t.subcategory === b) })),
   ];
   groups.forEach(g => {
     g.done = g.tasks.filter(t => isTaskDone(t, d)).length;
@@ -1527,12 +1542,18 @@ function renderFamily() {
 function renderFamilyGroupedPanel(mountId) {
   const mount = el(mountId);
   if (!mount) return;
-  const area = (state.taskAreas||[]).find(a => a.id === 'family');
-  if (!area) { mount.innerHTML = ''; return; }
+  // Ensure family area exists in state.taskAreas
+  state.taskAreas = state.taskAreas || [];
+  let area = state.taskAreas.find(a => a.id === 'family');
+  if (!area) {
+    area = { id:'family', name:'Familia', icon:'👨‍👩‍👧', color:'#E11D48', subcategories:[] };
+    state.taskAreas.push(area);
+    saveState();
+  }
   const people = area.subcategories || [];
   const d = getSelectedDate();
 
-  const allTasks = state.unifiedTasks
+  const allTasks = (state.unifiedTasks || [])
     .filter(t => t.area === 'family' && taskRunsOnDate(t, d))
     .sort((a,b) => {
       const dA = isTaskDone(a, d) ? 1 : 0;
@@ -1542,9 +1563,18 @@ function renderFamilyGroupedPanel(mountId) {
       return (pri[a.priority]||2) - (pri[b.priority]||2);
     });
 
+  // Collect any orphan subcategories present in tasks but missing from area.subcategories
+  const orphans = [];
+  allTasks.forEach(t => {
+    if (t.subcategory && !people.includes(t.subcategory) && !orphans.includes(t.subcategory)) {
+      orphans.push(t.subcategory);
+    }
+  });
+  const allPeople = [...people, ...orphans];
+
   const groups = [
     { id:'__general', name:'General', tasks: allTasks.filter(t => !t.subcategory) },
-    ...people.map(p => ({ id:p, name:p, tasks: allTasks.filter(t => t.subcategory === p) })),
+    ...allPeople.map(p => ({ id:p, name:p, tasks: allTasks.filter(t => t.subcategory === p) })),
   ];
   groups.forEach(g => {
     g.done = g.tasks.filter(t => isTaskDone(t, d)).length;
@@ -2797,20 +2827,26 @@ function doSearch(q){
 /* ─── MODALS: QUICK ADD ──────────────────────────────────── */
 function quickAdd(){
   const page=currentPage;
+  // Map each page to the right "+ Agregar" action.
+  // For task-based pages, open the unified task modal pre-set to that area.
   const map={
-    overview:()=>addCommitmentModal(),
-    business:()=>addTaskModal(),
-    health:()=>addHabitModal(),
-    family:()=>addPersonModal(),
-    finance:()=>addExpenseModal(),
-    goals:()=>addGoalModal(),
-    time:()=>addPriorityModal(),
-    learning:()=>addBookModal(),
-    nutrition:()=>addFoodModal(),
-    inbox:()=>captureInbox(),
-    weekly:()=>{},
+    overview:    ()=> openTaskModal(null, 'pending'),
+    business:    ()=> openTaskModal(null, 'business'),
+    health:      ()=> openTaskModal(null, 'health'),
+    family:      ()=> openTaskModal(null, 'family'),
+    learning:    ()=> openTaskModal(null, 'learning'),
+    habits:      ()=> openTaskModal(null, 'habits'),
+    finance:     ()=> (typeof addFinanceAccountModal === 'function' ? addFinanceAccountModal() : null),
+    goals:       ()=> addGoalModal(),
+    time:        ()=> openTaskModal(null, 'pending'),
+    ejercicio:   ()=> (typeof addExerciseModal === 'function' ? addExerciseModal() : null),
+    consciousness:()=> alert('Para registrar una emoción, toca cualquier nivel en la tabla de Hawkins'),
+    nutrition:   ()=> (typeof addFoodModal === 'function' ? addFoodModal() : null),
+    inbox:       ()=> (typeof addNotesAreaModal === 'function' ? addNotesAreaModal() : null),
+    profile:     ()=> (typeof editProfileModal === 'function' ? editProfileModal() : null),
+    weekly:      ()=> {},
   };
-  (map[page]||addTaskModal)();
+  (map[page] || (()=>openTaskModal(null,'pending')))();
 }
 
 function addAreaModal(section){
