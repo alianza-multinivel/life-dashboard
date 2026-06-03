@@ -664,11 +664,7 @@ function renderAreaCard(area, dateStr) {
       const pri = { urgent:0, important:1, normal:2 };
       return (pri[a.priority]||2) - (pri[b.priority]||2);
     });
-  // Track which areas are expanded (in state so it survives re-renders)
-  state.overview = state.overview || { expandedAreas: {} };
-  const isExpanded = !!state.overview.expandedAreas[area.id];
-  const visible = isExpanded ? tasks : tasks.slice(0, 6);
-  const extra = tasks.length - visible.length;
+  // Show ALL tasks — user scrolls within the card if there are many
   return `<div class="area-task-card" style="--area-color:${area.color}">
     <div class="area-task-head">
       <div class="area-task-title-wrap">
@@ -682,21 +678,9 @@ function renderAreaCard(area, dateStr) {
       </div>
     </div>
     <div class="area-task-list">
-      ${visible.length ? visible.map(t => renderTaskRow(t, dateStr)).join('') : `<div class="area-empty">Sin tareas hoy. Toca + para agregar.</div>`}
+      ${tasks.length ? tasks.map(t => renderTaskRow(t, dateStr)).join('') : `<div class="area-empty">Sin tareas hoy. Toca + para agregar.</div>`}
     </div>
-    ${extra > 0
-      ? `<button type="button" class="area-expand-more" onclick="toggleAreaExpanded('${area.id}')"><span>▼</span> Ver ${extra} ${extra===1?'tarea':'tareas'} más</button>`
-      : (isExpanded && tasks.length > 6
-          ? `<button type="button" class="area-expand-more collapsed" onclick="toggleAreaExpanded('${area.id}')"><span>▲</span> Ver menos</button>`
-          : '')}
   </div>`;
-}
-
-function toggleAreaExpanded(areaId) {
-  state.overview = state.overview || { expandedAreas: {} };
-  state.overview.expandedAreas[areaId] = !state.overview.expandedAreas[areaId];
-  saveState();
-  renderOverview();
 }
 
 function renderTaskRow(t, dateStr, opts = {}) {
