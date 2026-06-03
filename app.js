@@ -1034,9 +1034,7 @@ function saveTaskDraft() {
     state.unifiedTasks = [];
   }
 
-  let isNew;
   try {
-    isNew = !state.unifiedTasks.find(t => t.id === window._taskDraft.id);
     const idx = state.unifiedTasks.findIndex(t => t.id === window._taskDraft.id);
     if (idx >= 0) state.unifiedTasks[idx] = window._taskDraft;
     else state.unifiedTasks.push(window._taskDraft);
@@ -1046,33 +1044,8 @@ function saveTaskDraft() {
     alert('❌ Error al guardar la tarea: ' + e.message);
     return;
   }
-  const savedTask = JSON.parse(JSON.stringify(window._taskDraft));  // clone before closeTaskModal nulls it
   closeTaskModal();
-
-  // Check if task appears on the currently-viewed date
-  const currentDate = getSelectedDate();
-  const today_ = today();
-  const appearsToday = taskRunsOnDate(savedTask, currentDate);
-
-  if (appearsToday) {
-    // Renders normally — task is visible in current view
-    renderPage(currentPage);
-    if (isNew) showToast(`✅ Tarea agregada: "${savedTask.title}"`);
-    else showToast(`✅ Cambios guardados`);
-  } else {
-    // Task is saved but won't appear in current view — find next occurrence
-    const nextDate = getNextTaskOccurrence(savedTask, currentDate);
-    renderPage(currentPage);
-    if (nextDate) {
-      const d = new Date(nextDate + 'T00:00');
-      const label = d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' });
-      showToast(`✅ Tarea guardada · Aparecerá el ${label}`, 'Ir a esa fecha', () => {
-        setSelectedDate(nextDate);
-      });
-    } else {
-      showToast(`✅ Tarea guardada`);
-    }
-  }
+  renderPage(currentPage);
 }
 
 function getNextTaskOccurrence(task, fromDate) {
